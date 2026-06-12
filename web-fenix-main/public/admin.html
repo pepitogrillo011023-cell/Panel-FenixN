@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración Avanzado - Club Fenix</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <style>
+        /* Agregamos una pequeña clase para las vistas internas de las cajas */
+        .sub-caja-view { display: none; }
+        .active-sub-caja { display: block; }
+    </style>
+</head>
+<body>
+    <script src="/socket.io/socket.io.js"></script>
+    
+    <div class="sidebar">
+        <h2>⚡ Club Fenix</h2>
+        <div class="menu-category">Soporte</div>
+        <button id="btn-nav-chats" class="nav-btn active-nav" onclick="cambiarSeccion('chats')" style="display: flex; align-items: center; width: 100%;">
+    💬 Chats en Vivo
+    
+    <span id="notif-verde-soporte" class="dot-notificacion oculto-notif"></span>
+</button>
+        
+        <div class="menu-category">Control Personal</div>
+        <button id="btn-nav-usuarios" class="nav-btn" onclick="cambiarSeccion('usuarios')">👥 Usuarios Internos</button>
+        <button id="btn-nav-clientes" class="nav-btn" onclick="cambiarSeccion('clientes')">📇 Clientes</button>
+        <button id="btn-nav-cargas" class="nav-btn" onclick="cambiarSeccion('cargas')" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+    <span>🎰 Cargas Pendientes</span>
+    <span id="admin-badge-cargas" style="display: none; background: #ef4444; color: white; border-radius: 50%; padding: 2px 7px; font-size: 11px; font-weight: bold; margin-left: 10px;">0</span>
+</button>
+        <button id="btn-nav-retiros" class="nav-btn" onclick="cambiarSeccion('retiros')" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+    <span>💸 Retiros Pendientes</span>
+    <span style="display:flex; align-items:center; gap:6px;">
+        <span id="notif-dot-retiros" style="display:none; width:10px; height:10px; background:#ef4444; border-radius:50%; box-shadow:0 0 8px #ef4444;"></span>
+        <span id="admin-badge-retiros" style="display: none; background: #ef4444; color: white; border-radius: 50%; padding: 2px 7px; font-size: 11px; font-weight: bold;">0</span>
+    </span>
+</button>
+        
+        
+        <div class="menu-category">Finanzas</div>
+        <a href="/admin/estadisticas.html" class="nav-btn" style="text-decoration:none; color:#38bdf8;">📊 Estadísticas y Arqueo</a>
+        <button id="btn-nav-administrarcajas" class="nav-btn" onclick="cambiarSeccion('administrarcajas')" style="color:#a3e635;">💼 Administrar Cajas</button>
+        
+        <button id="btn-nav-billetera" class="nav-btn" onclick="cambiarSeccion('billetera')">💳 Billetera Vinculada</button>
+        <button id="btn-nav-creditos" class="nav-btn" onclick="cambiarSeccion('creditos')" style="color:#ffaa00;">🟡 Solicitudes Créditos</button>
+        <button class="nav-btn" onclick="abrirEnPopup('https://agents.ganamosnet.club/users/all', 'GanamosPanel')">
+    🌲 GANAMOS.NET
+</button>
+
+<button class="nav-btn" onclick="abrirEnPopup('https://admin.oropuro.org/', 'OropuroPanel')">
+    ✨ OROPURO
+</button>
+        
+        <div class="menu-category">Marketing</div>
+        <button id="btn-nav-push" class="nav-btn" onclick="cambiarSeccion('push')">📣 Notificaciones y Push</button>
+        <button id="btn-nav-retencion" class="nav-btn" onclick="cambiarSeccion('retencion')">⏳ Retención Auto</button>
+        <button id="btn-nav-eventos" class="nav-btn" onclick="cambiarSeccion('eventos')">🎁 Eventos Especiales</button>
+        <button id="btn-nav-tienda" class="nav-btn" onclick="mostrarTiendaAdmin()">🛒 Configurar Tienda</button>
+        
+        <div class="menu-category">Sistema</div>
+        <button id="btn-nav-apis" class="nav-btn" onclick="cambiarSeccion('apis')">🔗 Configuración APIs</button>
+        <button id="btn-nav-costos" class="nav-btn" onclick="cambiarSeccion('costos')">🪙 Costos Minijuegos</button>
+        <button class="nav-btn" onclick="abrirImportador()" style="color: #f59e0b;">📥 Importar de Ganamos</button>
+
+        <div class="menu-category">Plataformas Externas</div>
+    
+       <button id="btn-logout" class="btn-sidebar-logout">
+    ❌ Cerrar Sesión
+</button>
+</div>
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar" id="panel-title">Panel de Control - Chats en Vivo</div>
+        <div class="workspace">
+            
+            <div id="section-chats" class="view-section active-view" style="flex-direction: row; padding: 0;">
+                <div class="chats-sidebar">
+                    <div class="chats-header">Usuarios Activos</div>
+                    <div class="user-list" id="lista-usuarios"></div>
+                </div>
+                <div class="live-chat-monitor">
+                    <div class="monitor-header" style="padding: 15px; border-bottom: 1px solid #1f2937; background: #111827; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+    
+    <span id="active-chat-username">Ningún usuario seleccionado</span>
+    
+    <button onclick="finalizarSoporteCliente()" class="btn-finalizar-soporte">
+        🛑 Finalizar Soporte
+    </button>
+</div>
+                    <div class="monitor-messages" id="active-chat-messages"><div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear en tiempo real.</div></div>
+                    <div class="monitor-input-area">
+                        <input type="text" id="admin-message-input" class="admin-chat-input" placeholder="Escribí un mensaje..." disabled>
+                        <button class="btn-save" id="btn-enviar-msg" onclick="enviarMensajeManual()" style="margin-top: 0;" disabled>Enviar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-tienda" class="view-section">
+                <div class="panel-inside">
+                    <h3 style="color:white; margin-bottom:20px;">🛒 Configurar Productos de la Tienda</h3>
+                    <div id="tienda-admin-form" style="display:flex; flex-direction:column; gap:15px; max-width: 500px; background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #374151;">
+                        <div style="display:flex; gap:15px; align-items:center; background: #1b2635; padding: 12px; border-radius: 8px;">
+                            <span style="color:#94a3b8; font-weight:bold; min-width:80px;">Prod. 1:</span>
+                            <input type="text" id="p-nombre-0" placeholder="Nombre (ej: Bono 10%)" class="input-text-adv" style="flex:2; margin:0; border:none; padding:10px;">
+                            <input type="number" id="p-costo-0" placeholder="Costo CR" class="input-text-adv" style="flex:1; margin:0; border:none; padding:10px;">
+                        </div>
+                        <div style="display:flex; gap:15px; align-items:center; background: #1b2635; padding: 12px; border-radius: 8px;">
+                            <span style="color:#94a3b8; font-weight:bold; min-width:80px;">Prod. 2:</span>
+                            <input type="text" id="p-nombre-1" placeholder="Nombre (ej: Bono 10%)" class="input-text-adv" style="flex:2; margin:0; border:none; padding:10px;">
+                            <input type="number" id="p-costo-1" placeholder="Costo CR" class="input-text-adv" style="flex:1; margin:0; border:none; padding:10px;">
+                        </div>
+                        <div style="display:flex; gap:15px; align-items:center; background: #1b2635; padding: 12px; border-radius: 8px;">
+                            <span style="color:#94a3b8; font-weight:bold; min-width:80px;">Prod. 3:</span>
+                            <input type="text" id="p-nombre-2" placeholder="Nombre (ej: Bono 10%)" class="input-text-adv" style="flex:2; margin:0; border:none; padding:10px;">
+                            <input type="number" id="p-costo-2" placeholder="Costo CR" class="input-text-adv" style="flex:1; margin:0; border:none; padding:10px;">
+                        </div>
+                        <div style="display:flex; gap:15px; align-items:center; background: #1b2635; padding: 12px; border-radius: 8px;">
+                            <span style="color:#94a3b8; font-weight:bold; min-width:80px;">Prod. 4:</span>
+                            <input type="text" id="p-nombre-3" placeholder="Nombre (ej: Bono 10%)" class="input-text-adv" style="flex:2; margin:0; border:none; padding:10px;">
+                            <input type="number" id="p-costo-3" placeholder="Costo CR" class="input-text-adv" style="flex:1; margin:0; border:none; padding:10px;">
+                        </div>
+                        <button onclick="guardarTiendaAdmin()" class="btn-save" style="margin:0; width:100%; border:none; cursor:pointer; font-size:16px;">💾 GUARDAR TIENDA</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-usuarios" class="view-section">
+                <div class="panel-inside"><h3 style="color:white; margin-bottom:15px;">Operadores Internos</h3><table class="data-table"><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th></tr></thead><tbody><tr><td>Admin</td><td>admin</td><td>Master</td><td>Activo</td></tr></tbody></table></div>
+            </div>
+            
+            <div id="section-clientes" class="view-section">
+                <div class="panel-inside">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 style="color:white; margin:0;">Clientes</h3>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <input type="text" id="buscador-clientes" class="input-text-adv" placeholder="🔍 Buscar por nombre..." onkeyup="buscarCliente()" style="width: 200px; padding: 6px 10px; margin: 0;">
+                            <label style="color:#94a3b8; font-size:13px; font-weight:bold;">Mostrar:</label>
+                            <select id="clientes-por-pagina" class="input-text-adv" style="width:auto; padding:6px 10px; margin:0;" onchange="cambiarPaginacionClientes()">
+                                <option value="10">10 filas</option>
+                                <option value="30">30 filas</option>
+                                <option value="50">50 filas</option>
+                                <option value="todos">Todos</option>
+                            </select>
+                        </div>
+                    </div>
+                    <table class="data-table" id="tabla-clientes">
+                        <thead> <tr> <th>Usuario Casino</th> <th>Referido por</th> <th>Saldo Panel</th>  <th>Créditos 🟡</th> <th>Wager</th>  <th>Estado</th> <th>Acciones</th></tr>
+                        <tbody></tbody>
+                    </table>
+                    <div id="paginacion-clientes" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 15px;"></div>
+                </div>
+            </div>
+            
+            <div id="section-cargas" class="view-section" style="padding: 20px;">
+    <div class="header-seccion" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="color: #fff; margin: 0;">📥 Solicitudes de Cargas Pendientes</h2>
+        <button onclick="obtenerCargasPendientes()" class="btn-refrescar" style="background: #f59e0b; color: #000; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">🔄 Actualizar Lista</button>
+    </div>
+
+    <div class="tabla-contenedor" style="background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; color: #fff;">
+            <thead>
+                <tr style="background: #2a2a2a; color: #f59e0b; border-bottom: 2px solid #333;">
+                    <th style="padding: 12px;">Usuario</th>
+                    <th style="padding: 12px;">Plataforma</th>
+                    <th style="padding: 12px;">Monto</th>
+                    <th style="padding: 12px;">Comprobante</th>
+                    <th style="padding: 12px;">Bono</th><th style="padding: 12px; text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-cargas-body">
+                <tr>
+                    <td colspan="5" style="padding:20px; text-align:center; color:#888;">Cargando solicitudes...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+            <div id="section-retiros" class="view-section" style="padding: 20px;">
+    <h2 style="color: #f59e0b; margin-bottom: 20px;">💸 Retiros Pendientes</h2>
+    
+    <div class="tabla-contenedor" style="background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; color: #fff;">
+            <thead>
+                <tr style="background: #2a2a2a; color: #f59e0b; border-bottom: 2px solid #333;">
+                    <th style="padding: 12px;">Usuario</th>
+                    <th style="padding: 12px;">Plataforma</th>
+                    <th style="padding: 12px;">Monto</th>
+                    <th style="padding: 12px;">CBU/Alias/Titular</th>
+                    <th style="padding: 12px; text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="lista-retiros-body">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+            <div id="section-administrarcajas" class="view-section">
+                <div class="panel-inside">
+                    
+                    <div class="event-tabs-header">
+                        <button class="event-tab-btn active-event-tab" id="tab-caja-retiros" onclick="cambiarSubCaja('retiros')">💸<br>Retiros</button>
+                        <button class="event-tab-btn" id="tab-caja-cierre" onclick="cambiarSubCaja('cierre')">📊<br>Cierre Caja</button>
+                        <button class="event-tab-btn" id="tab-caja-resumen" onclick="cambiarSubCaja('resumen')">📈<br>Resumen</button>
+                        <button class="event-tab-btn" id="tab-caja-historial" onclick="cambiarSubCaja('historial')">📅<br>Historial</button>
+                    </div>
+
+                    <div id="sub-caja-retiros" class="sub-caja-view active-sub-caja">
+                        
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:15px; background:#111827; padding:15px; border-radius:8px; border: 1px solid #1f2937;">
+                            <div style="display:flex; gap:15px; align-items:center;">
+                                <h3 style="margin:0; color:#38bdf8;">Datos del Turno:</h3>
+                                <input type="date" id="global-retiro-fecha" class="input-text-adv" style="width:180px; margin:0; background:#a3e635; color:black; font-weight:bold;">
+                                <select id="global-retiro-turno" class="input-text-adv" style="width:150px; margin:0; background:#a3e635; color:black; font-weight:bold;">
+                                    <option value="Mañana">Mañana</option>
+                                    <option value="Tarde">Tarde</option>
+                                    <option value="Noche">Noche</option>
+                                </select>
+                            </div>
+                            <button class="btn-add" onclick="addRetiroRow()" style="font-size: 16px; padding: 10px 20px;">➕ Agregar Retiro</button>
+                        </div>
+
+                        <table class="data-table" id="tabla-control-retiros">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Monto</th>
+                                    <th>Hora</th>
+                                    <th>Verifi</th>
+                                    <th>Turno</th>
+                                    <th>Acción</th> </tr>
+                            </thead>
+                            <tbody id="tbody-retiros">
+                                </tbody>
+                        </table>
+                        <button class="btn-save" style="margin-top:20px; width:100%; font-size:16px;" onclick="procesarCierreRetiros()">📥 CERRAR CAJA Y ENVIAR</button>
+                    </div>
+
+                    <div id="sub-caja-cierre" class="sub-caja-view">
+                        <h3 style="color:white; margin-top:15px;">Registro Operativo - Cierre de Caja</h3>
+                        <div class="excel-card">
+                            <div class="excel-grid">
+                                <div>
+                                    <table class="table-custom">
+                                        <tr><th>Fecha Inicio</th><td><input type="date" id="cc-fecha-inicio" class="input-text-adv" style="margin-bottom:0;"></td><th>Fecha Fin</th><td><input type="date" id="cc-fecha-fin" class="input-text-adv" style="margin-bottom:0;"></td></tr>
+                                        <tr><th>Hora Inicio</th><td><input type="time" id="cc-hora-inicio" class="input-text-adv" style="margin-bottom:0;"></td><th>Hora Fin</th><td><input type="time" id="cc-hora-fin" class="input-text-adv" style="margin-bottom:0;"></td></tr>
+                                        <tr><th colspan="2">Cajero</th><td colspan="2"><input type="text" id="cc-cajero" class="input-text-adv" style="margin-bottom:0;"></td></tr>
+                                        <tr><th colspan="2">Turno</th><td colspan="2"><select id="cc-turno" class="input-text-adv" style="margin-bottom:0;"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option></select></td></tr>
+                                    </table>
+                                    <h4 style="color:#38bdf8; margin: 20px 0 5px 0;">GASTOS JORNADA</h4>
+                                    <table class="table-custom" id="tabla-gastos"><thead><tr><th>Tipo</th><th>Usuario</th><th>Monto</th><th></th></tr></thead><tbody></tbody></table>
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <button class="btn-add" onclick="addGastoRow()">+ Agregar Gasto</button>
+                                        <div style="background:#002b5e; color:#38bdf8; padding:8px 15px; font-weight:bold;">TOTAL: $<span id="tot-gastos">0.00</span></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <table class="table-custom">
+                                        <tr><th>Ingreso</th><th>Saldo Oro</th><th>Saldo Ganamos</th><th>EGRESO (Ing.+Oro+Gan)</th></tr>
+                                        <tr>
+                                            <td><input type="number" id="cc-ingreso" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
+                                            <td><input type="number" id="cc-oro" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
+                                            <td><input type="number" id="cc-ganamos" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
+                                            <td><input type="number" id="cc-egreso" class="input-text-adv val-num" readonly style="color:#ef4444; font-weight:bold; margin-bottom:0;"></td>
+                                        </tr>
+                                        <tr><th colspan="4" style="text-align:center;">CIERRE</th></tr>
+                                        <tr><th>Monto Esperado (Egre-Gast-Prop)</th><th colspan="2">Monto Real Final</th><th>Sob/Faltante</th></tr>
+                                        <tr>
+                                            <td><input type="number" id="cc-esperado" class="input-text-adv val-num" readonly style="margin-bottom:0;"></td>
+                                            <td colspan="2"><input type="number" id="cc-real" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
+                                            <td><input type="number" id="cc-dif" class="input-text-adv val-num" readonly style="margin-bottom:0;"></td>
+                                        </tr>
+                                    </table>
+                                    <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+                                        <table class="table-custom" style="width:150px;"><tr><th style="background:#a3e635; color:black;">RESERVA</th></tr><tr><td><input type="number" id="cc-reserva" value="400000" class="input-text-adv val-num" style="margin-bottom:0;"></td></tr></table>
+                                    </div>
+                                    <h4 style="color:#38bdf8; margin: 20px 0 5px 0;">PROPINAS JORNADA</h4>
+                                    <table class="table-custom" id="tabla-propinas"><thead><tr><th>Usuario</th><th>Monto</th><th></th></tr></thead><tbody></tbody></table>
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <button class="btn-add" onclick="addPropinaRow()">+ Agregar Propina</button>
+                                        <div style="background:#002b5e; color:#38bdf8; padding:8px 15px; font-weight:bold;">TOTAL: $<span id="tot-propinas">0.00</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="btn-save" style="float:none; width:100%; margin-top:20px;" onclick="guardarCierreDB()">💾 CERRAR CAJA Y ENVIAR</button>
+                        </div>
+                    </div>
+
+                    <div id="sub-caja-resumen" class="sub-caja-view">
+                        <div style="display:flex; gap:15px; align-items:center; background:#111827; padding:15px; border-radius:8px; margin-top:15px; margin-bottom:20px; border: 1px solid #1f2937;">
+                            <h3 style="margin:0; color:#38bdf8;">INGRESAR FECHA PARA RESUMEN:</h3>
+                            <input type="date" id="res-fecha" class="input-text-adv" style="width:200px; margin:0; background:#a3e635; color:black; font-weight:bold;" onchange="buscarResumen()">
+                        </div>
+                        <table class="resumen-table"><thead><tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr></thead><tbody id="res-diario"></tbody></table>
+                        <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:20px; margin-top: 20px;">
+                            <table class="resumen-table"><thead><tr><th style="background:#4c0519;">CIERRE MENSUAL</th><th style="background:#b45309;">SALIDAS TOTALES >>>></th><th id="res-salida-tot">0</th></tr></thead><tbody id="res-mensual-salidas"></tbody></table>
+                            <div>
+                                <table class="resumen-table" style="margin-bottom:15px;"><thead><tr><th style="background:#4c0519;">FICHAS MENSUALES</th><th style="background:#701a35;">PESOS</th></tr></thead><tbody id="res-mensual-fichas"></tbody></table>
+                                <table class="resumen-table"><thead><tr><th style="background:#4c0519;">BONOS</th><th style="background:#701a35;">NUEVOS (BB)</th><th style="background:#b45309;">RECOMENDADOS (BR)</th></tr></thead><tbody id="res-mensual-bonos"></tbody></table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="sub-caja-historial" class="sub-caja-view">
+                        <div style="display:flex; gap:15px; align-items:center; background:#111827; padding:15px; border-radius:8px; margin-top:15px; margin-bottom:20px; border: 1px solid #1f2937;">
+                            <h3 style="margin:0; color:#38bdf8;">BUSCAR HISTORIAL:</h3>
+                            <input type="date" id="hist-fecha" class="input-text-adv" style="width:180px; margin:0; background:#a3e635; color:black; font-weight:bold;">
+                            <select id="hist-turno" class="input-text-adv" style="width:150px; margin:0; background:#a3e635; color:black; font-weight:bold;">
+                                <option value="Mañana">Mañana</option>
+                                <option value="Tarde">Tarde</option>
+                                <option value="Noche">Noche</option>
+                            </select>
+                            <button class="btn-action-small" onclick="buscarHistorialCajas()" style="margin:0; background:#38bdf8; color:black; font-weight:bold; border:none; padding:10px 15px;">🔍 Buscar</button>
+                        </div>
+                        <div id="historial-resultados"><p style="color:#64748b; font-size:14px; text-align:center; margin-top:40px;">Por favor, seleccioná una fecha y un turno para ver la información.</p></div>
+                    </div>
+
+                </div>
+            </div>
+            <div id="section-creditos" class="view-section">
+                <div class="panel-inside">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 style="color:#ffaa00; margin:0;">Solicitudes de Créditos Pendientes</h3>
+                        <button class="btn-action-small" style="background:#1f2937; border:1px solid #374151;" onclick="cargarSolicitudesCreditos()">🔄 Actualizar</button>
+                    </div>
+                    <table class="data-table" id="tabla-pendientes-creditos">
+                        <thead><tr><th>ID Transacción</th><th>Cliente</th><th>Monto ($)</th><th>Comprobante</th><th>Bono</th><th>Acción</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="section-costos" class="view-section">
+                <div class="panel-inside">
+                    <h3 style="color:white; margin-bottom:15px;">Costos de Minijuegos (En Créditos)</h3>
+                    <p style="color:#94a3b8; font-size:13px; margin-bottom:20px;">Definí el costo de cada tirada extra una vez que el jugador consume su tiro diario gratuito.</p>
+                    <div class="api-grid" id="grid-costos">
+                        <div class="api-card">
+                            <div class="api-card-header">🎯 Ruleta</div>
+                            <div class="form-row"><label>Costo por Tirada (Créditos)</label><input type="number" id="costo-ruleta" class="input-text-adv" value="10"></div>
+                            <button class="btn-action-small warning" onclick="actualizarCostoMinijuego('Ruleta', 'costo-ruleta')">Guardar Costo</button>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">🎫 Raspa y Gana</div>
+                            <div class="form-row"><label>Costo por Tarjeta (Créditos)</label><input type="number" id="costo-raspa" class="input-text-adv" value="5"></div>
+                            <button class="btn-action-small warning" onclick="actualizarCostoMinijuego('Raspa', 'costo-raspa')">Guardar Costo</button>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">🍒 Tragamonedas (Slots)</div>
+                            <div class="form-row"><label>Costo por Giro (Créditos)</label><input type="number" id="costo-tragamonedas" class="input-text-adv" value="10"></div>
+                            <button class="btn-action-small warning" onclick="actualizarCostoMinijuego('Tragamonedas', 'costo-tragamonedas')">Guardar Costo</button>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">🃏 Carta de la Suerte</div>
+                            <div class="form-row"><label>Costo por Voltear (Créditos)</label><input type="number" id="costo-cartas" class="input-text-adv" value="5"></div>
+                            <button class="btn-action-small warning" onclick="actualizarCostoMinijuego('Cartas', 'costo-cartas')">Guardar Costo</button>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">🪙 Cara o Cruz</div>
+                            <div class="form-row"><label>Costo por Lanzamiento (Créditos)</label><input type="number" id="costo-moneda" class="input-text-adv" value="2"></div>
+                            <button class="btn-action-small warning" onclick="actualizarCostoMinijuego('Moneda', 'costo-moneda')">Guardar Costo</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="section-billetera" class="view-section">
+                <div class="panel-inside">
+                    <div class="stat-card" style="text-align:left; border-left: 5px solid #10b981; grid-column: span 2; width: fit-content;">
+                        <div class="wallet-status">🟢 Billetera Mercado Pago (Monto Vinculado)</div>
+                        <input type="text" id="wallet-monto" style="background: transparent; border: none; color: #10b981; font-size: 32px; font-weight: bold; width: 100%; outline: none; margin-top: 10px;" value="$0,00 ARS">
+                        <div style="display:flex; gap:10px; margin-top: 20px;">
+                            <button class="btn-save" onclick="guardarConfig('billetera')" style="margin-top:0;">Guardar Ajuste Manual</button>
+                            <button class="btn-save" style="background:#10b981; margin-top:0;" onclick="simularPago()">Simular Pago MP</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="section-push" class="view-section">
+                <div class="panel-inside">
+                    <div class="push-layout">
+                        <div class="push-form-card">
+                            <h4 style="margin:0; color:white;">Lanzador de Notificaciones</h4>
+                            <div class="form-row"><label>Título</label><input type="text" id="push-titulo" class="input-text-adv" value="Casino 463 - Bono Especial!"></div>
+                            <div class="form-row"><label>Mensaje Masivo</label><textarea id="push-mensaje" class="input-text-adv" rows="3" style="resize:none;">Tenés un bono del 200% esperándote...</textarea></div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-save" style="margin:0; background-color: #374151;" onclick="guardarConfig('push')">💾 Guardar Borrador</button>
+                                <button class="btn-save" style="margin:0;" onclick="enviarPushMasivo()">🚀 Enviar Push Masivo</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="section-retencion" class="view-section">
+                <div class="panel-inside">
+                    <h4 style="color:white; font-size: 20px; margin: 0 0 5px 0;">Automatización de Retención</h4>
+                    <p style="color: #64748b; font-size:13.5px; margin: 0 0 20px 0;">Activá las alertas por inactividad.</p>
+                    <div class="retencion-container">
+                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-0" checked><span class="slider"></span></label><span>Inactivo 24 hs</span></div><input type="text" id="ret-txt-0" class="input-retencion-large" value="¡Te extrañamos! ¿Y si hoy es tu día de suerte? 🍀"></div>
+                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-1" checked><span class="slider"></span></label><span>Inactivo 3 días</span></div><input type="text" id="ret-txt-1" class="input-retencion-large" value="Tenés un BONO esperándote. Volvé hoy y aprovechá un 200% extra 💰"></div>
+                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-2" checked><span class="slider"></span></label><span>Inactivo 7 días</span></div><input type="text" id="ret-txt-2" class="input-retencion-large" value="🔥 BONO EXCLUSIVO 200% solo por volver hoy. ¡No lo dejes vencer!"></div>
+                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-3"><span class="slider"></span></label><span>Inactivo 15 días</span></div><input type="text" id="ret-txt-3" class="input-retencion-large" value="Manda la palabra 'REGALO' al soporte y te cargamos fichas gratis 🎁"></div>
+                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-4"><span class="slider"></span></label><span>Inactivo 30 días</span></div><input type="text" id="ret-txt-4" class="input-retencion-large" value="¿Hace mucho que no jugás? Te dejamos un beneficio reingresando hoy."></div>
+                    </div>
+                    <button class="btn-save" onclick="guardarReglasRetencion()">Guardar Reglas</button>
+                </div>
+            </div>
+            
+            <div id="section-eventos" class="view-section">
+                <div class="panel-inside">
+                    <div class="event-tabs-header">
+                        <button class="event-tab-btn active-event-tab" id="tab-ev-ruleta" onclick="cambiarSubJuego('ruleta')">🎯<br>Ruleta</button>
+                        <button class="event-tab-btn" id="tab-ev-raspa" onclick="cambiarSubJuego('raspa')">🎫<br>Raspa/Gana</button>
+                        <button class="event-tab-btn" id="tab-ev-tragamonedas" onclick="cambiarSubJuego('tragamonedas')">🍒<br>Slots</button>
+                        <button class="event-tab-btn" id="tab-ev-cartas" onclick="cambiarSubJuego('cartas')">🃏<br>Cartas</button>
+                        <button class="event-tab-btn" id="tab-ev-moneda" onclick="cambiarSubJuego('moneda')">🪙<br>Moneda</button>
+                    </div>
+
+                    <div id="subview-ruleta" class="event-subview active-subview">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Ruleta Diaria</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 450px;">
+                                <table class="ruleta-table" id="tabla-config-ruleta">
+                                    <thead><tr><th>ID</th><th>Premio / Segmento</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
+                                    <tbody>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
+                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn-save" onclick="guardarEvento('ruleta')">Guardar Configuración Ruleta</button>
+                            </div>
+                            <div style="width: 280px; text-align: center;">
+                                <div class="ruleta-container">
+                                    <div class="ruleta-pointer">▼</div>
+                                    <canvas id="ruleta-admin-canvas" width="240" height="240"></canvas>
+                                </div>
+                                <button id="btn-spin-admin" class="btn-spin-admin" onclick="simularJuego('ruleta')">🎲 Simular Tiro</button>
+                                <div id="res-ruleta" style="margin-top:10px; color:#ffaa00; font-weight:bold; font-size:13px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subview-raspa" class="event-subview">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Raspa y Gana</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 450px;">
+                                <table class="ruleta-table" id="tabla-config-raspa">
+                                    <thead><tr><th>ID</th><th>Premio / Tarjeta</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
+                                    <tbody>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn-save" onclick="guardarEvento('raspa')">Guardar Configuración Raspa</button>
+                            </div>
+                            <div style="width: 280px; text-align: center; background: #0b0f19; border: 1px solid #ffaa00; border-radius: 12px; padding: 20px;">
+                                <h4 style="margin: 0; color: #ffaa00;">Simulador</h4>
+                                <div class="raspa-grid-board" id="tablero-prueba-raspa">
+                                    <div class="raspa-block-card" onclick="simularRaspa(0)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="simularRaspa(1)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="simularRaspa(2)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="simularRaspa(3)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="simularRaspa(4)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="simularRaspa(5)"><div class="raspa-cover-layer">?</div></div>
+                                </div>
+                                <button class="btn-spin-admin" style="background: #1f2937; border: 1px solid #374151; color: white;" onclick="resetSimulador('raspa')">🔄 Reiniciar</button>
+                                <div id="res-raspa" style="margin-top: 15px; color: #38bdf8; font-weight: bold; font-size:12px; min-height: 35px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subview-tragamonedas" class="event-subview">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Tragamonedas (Slots)</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 450px;">
+                                <table class="ruleta-table" id="tabla-config-tragamonedas">
+                                    <thead><tr><th>ID</th><th>Línea Ganadora</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
+                                    <tbody>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn-save" onclick="guardarEvento('tragamonedas')">Guardar Configuración Slots</button>
+                            </div>
+                            <div style="width: 280px; text-align: center;">
+                                <div class="slot-machine">
+                                    <div class="slot-reel" id="slot-1">🎰</div>
+                                    <div class="slot-reel" id="slot-2">🎰</div>
+                                    <div class="slot-reel" id="slot-3">🎰</div>
+                                </div>
+                                <button id="btn-spin-tragamonedas" class="btn-spin-admin" onclick="simularJuego('tragamonedas')">🕹️ Simular Tirada</button>
+                                <div id="res-tragamonedas" style="margin-top:15px; color:#ffaa00; font-weight:bold; font-size:13px; min-height: 35px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subview-cartas" class="event-subview">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Carta de la Suerte</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 450px;">
+                                <table class="ruleta-table" id="tabla-config-cartas">
+                                    <thead><tr><th>ID</th><th>Carta</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
+                                    <tbody>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn-save" onclick="guardarEvento('cartas')">Guardar Configuración Cartas</button>
+                            </div>
+                            <div style="width: 280px; text-align: center;">
+                                <div class="card-flip" onclick="simularJuego('cartas')">
+                                    <div class="card-inner" id="card-inner-admin">
+                                        <div class="card-front">?</div>
+                                        <div class="card-back">
+                                            <div id="card-val" style="font-size:30px; font-weight:bold;">🃏</div>
+                                            <div id="card-desc" style="font-size:12px; margin-top:10px;">Click para Voltear</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="btn-spin-cartas" class="btn-spin-admin" onclick="resetSimulador('cartas')">🔄 Reiniciar Carta</button>
+                                <div id="res-cartas" style="margin-top:15px; color:#ffaa00; font-weight:bold; font-size:13px; min-height: 35px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subview-moneda" class="event-subview">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Cara o Cruz</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 450px;">
+                                <table class="ruleta-table" id="tabla-config-moneda">
+                                    <thead><tr><th>ID</th><th>Lado / Resultado</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
+                                    <tbody>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn-save" onclick="guardarEvento('moneda')">Guardar Configuración Moneda</button>
+                            </div>
+                            <div style="width: 280px; text-align: center;">
+                                <div class="coin-flip" id="coin-admin" onclick="simularJuego('moneda')">🪙</div>
+                                <button id="btn-spin-moneda" class="btn-spin-admin" onclick="resetSimulador('moneda')">🔄 Reiniciar Moneda</button>
+                                <div id="res-moneda" style="margin-top:15px; color:#ffaa00; font-weight:bold; font-size:13px; min-height: 35px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-apis" class="view-section">
+                <div class="panel-inside">
+                    <h4 style="color:white; font-size: 20px; margin: 0 0 20px 0;">Integraciones y Llaves de API</h4>
+                    <div class="api-grid">
+                        <div class="api-card">
+                            <div class="api-card-header">🎰 API Sincronización Casino</div>
+                            <div class="form-row"><label>URL Panel Servidor</label><input type="text" id="api-url" class="input-text-adv" value="https://admin.clubzeus.vip/"></div>
+                            <div class="form-row"><label>Usuario Agente API</label><input type="text" id="api-user" class="input-text-adv" value="CHATZEUS"></div>
+                            <div class="form-row"><label>Mercado Pago Access Token</label><input type="password" id="api-pass" class="input-text-adv" value=""></div>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">🧠 API OpenAI Vision (OCR)</div>
+                            <div class="form-row"><label>OpenAI Secret API Key</label><input type="password" id="api-openai" class="input-text-adv" value="••••••••••••••••••••••••••••••••"></div>
+                            <div class="form-row"><label>Modelo AI</label>
+                                <select id="api-model" class="input-text-adv">
+                                    <option value="gpt-4o">gpt-4o (Más veloz y preciso)</option>
+                                    <option value="gpt-4-vision">gpt-4-vision-preview</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">⚡ Webhooks Billetera Lambda</div>
+                            <div class="form-row" style="flex-direction:row; justify-content:space-between; align-items:center;">
+                                <label>Integración Activa</label>
+                                <label class="switch"><input type="checkbox" id="api-webhook-active" checked><span class="slider"></span></label>
+                            </div>
+                            <div class="form-row"><label>Callback Webhook URL</label><input type="text" id="api-webhook-url" class="input-text-adv" value="https://j5uky5p2k6.execute-api.us-east-2.amazonaws.com"></div>
+                            <div class="form-row"><label>Callback Secret Pass</label><input type="password" id="api-webhook-pass" class="input-text-adv" value="••••••••••••••••"></div>
+                        </div>
+                    </div>
+                    <button class="btn-save" onclick="guardarConfig('apis')">Guardar Conexiones Permanentemente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalImportador" class="modal-overlay">
+        <div class="modal-content">
+            <h3>📥 Importar de Ganamos.net</h3>
+            <textarea id="dataPaste" placeholder="Pegá la tabla completa aquí..."></textarea>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="cerrarImportador()">Cancelar</button>
+                <button onclick="procesarDatos()">Actualizar Base</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-editar-cliente" class="modal-overlay">
+        <div class="modal-content" style="border-color: #38bdf8;">
+            <h3 style="color:white; margin-top:0;">✏️ Editar Cliente</h3>
+            <input type="hidden" id="edit-client-id">
+            <div class="form-row" style="text-align:left;">
+                <label>Nuevo Nombre de Usuario</label>
+                <input type="text" id="edit-client-user" class="input-dark">
+            </div>
+            <div class="form-row" style="text-align:left;">
+                <label>Nueva Contraseña</label>
+                <input type="password" id="edit-client-pass" class="input-dark" placeholder="Dejar en blanco para no cambiar">
+            </div>
+            <button class="btn-save" style="width:100%; margin-top:15px; float:none;" onclick="guardarEdicionCliente()">GUARDAR CAMBIOS</button>
+            <button class="btn-action-small" style="margin-top:10px; width:100%; padding:12px; background-color:#374151;" onclick="cerrarModalGeneral('modal-editar-cliente')">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="modal-gestion-creditos" class="modal-overlay">
+        <div class="modal-content" style="border-color: #8b5cf6; width: 380px;">
+            <h3 style="color:white; margin-top:0; font-size: 22px;">💳 Gestión de Fondos</h3>
+            <p style="color: #94a3b8; font-size: 14px; margin-bottom: 20px;">
+                Transfiriendo fondos para el usuario:<br>
+                <strong id="gestion-usuario-texto" style="color:#38bdf8; font-size: 16px;">---</strong>
+            </p>
+            <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;">
+                <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(100)">100</button>
+                <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(500)">500</button>
+                <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(1000)">1.000</button>
+                <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(10000)">10.000</button>
+            </div>
+            <div class="form-row" style="text-align:left;">
+                <label>Ingrese la cantidad</label>
+                <input type="number" id="gestion-monto" class="input-dark" placeholder="0" style="font-size: 20px; font-weight: bold; text-align: center;">
+            </div>
+            <input type="hidden" id="gestion-tipo-saldo"> 
+            <div style="display: flex; gap: 15px; margin-top: 25px;">
+    <button id="btn-depositar" class="btn-save" style="background-color: #10b981; flex: 1; margin: 0; padding: 15px; font-size: 15px;" onclick="ejecutarGestion('add')">DEPOSITAR</button>
+    
+    <button id="btn-retirar" class="btn-save" style="background-color: #ef4444; flex: 1; margin: 0; padding: 15px; font-size: 15px;" onclick="ejecutarGestion('remove')">RETIRAR</button>
+</div>
+            <button class="btn-action-small" style="margin-top:15px; width:100%; padding:12px; background-color:#374151; border: none; font-size: 14px;" onclick="cerrarModalGeneral('modal-gestion-creditos')">CANCELAR</button>
+        </div>
+    </div>
+
+    <div id="modal-comprobante-admin" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#222; padding:20px; border-radius:8px; max-width:90%; max-height:90%; text-align:center; position:relative; border: 1px solid #f59e0b; box-shadow: 0px 0px 15px rgba(245, 158, 11, 0.3);">
+        <span onclick="cerrarModalComprobante()" style="position:absolute; top:10px; right:15px; color:#fff; font-size:28px; cursor:pointer; font-weight:bold;">&times;</span>
+        <h3 style="color:#f59e0b; margin-top:0; margin-bottom:15px;">Comprobante de Transferencia</h3>
+        <img id="img-comprobante-modal" src="" alt="Comprobante" style="max-width:100%; max-height:70vh; border-radius:4px; border:1px solid #444;">
+    </div>
+</div>
+
+    <div id="modal-rechazo-retiro" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="border-color: #ef4444; width: 420px;">
+            <h3 style="color:#ef4444; margin-top:0;">❌ Rechazar retiro</h3>
+            <p style="color:#94a3b8; font-size:14px;">Indicá el motivo del rechazo. El cliente lo recibirá en la notificación push.</p>
+            <textarea id="input-motivo-rechazo" class="input-dark" rows="4" placeholder="Ej: CBU incorrecto, datos no coinciden..." style="width:100%; margin-top:10px; resize:vertical;"></textarea>
+            <input type="hidden" id="retiro-id-rechazo">
+            <div style="display:flex; gap:10px; margin-top:20px;">
+                <button class="btn-save" style="background:#ef4444; flex:1; margin:0;" onclick="confirmarRechazoRetiro()">Confirmar rechazo</button>
+                <button class="btn-action-small" style="flex:1; padding:12px; background:#374151;" onclick="cerrarModalRechazoRetiro()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function mostrarTiendaAdmin() {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
+            
+            document.getElementById('section-tienda').classList.add('active-view');
+            document.getElementById('btn-nav-tienda').classList.add('active-nav');
+            document.getElementById('panel-title').innerText = "Panel de Control - Configuración Tienda";
+            
+            cargarValoresTienda();
+        }
+
+        async function cargarValoresTienda() {
+            try {
+                const res = await fetch('/api/tienda');
+                const prods = await res.json();
+                for(let i=0; i<4; i++) {
+                    if(prods[i]) {
+                        document.getElementById(`p-nombre-${i}`).value = prods[i].nombre || '';
+                        document.getElementById(`p-costo-${i}`).value = prods[i].costo || '';
+                    }
+                }
+            } catch(e) { console.log('Error cargando los datos visuales de la tienda'); }
+        }
+
+        async function guardarTiendaAdmin() {
+            let productos = [];
+            for(let i=0; i<4; i++) {
+                productos.push({
+                    nombre: document.getElementById(`p-nombre-${i}`).value,
+                    costo: Number(document.getElementById(`p-costo-${i}`).value)
+                });
+            }
+            try {
+                const res = await fetch('/api/admin/actualizar-tienda', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ productos })
+                });
+                const data = await res.json();
+                if(data.exito) alert("✅ Tienda guardada con éxito en el servidor");
+                else alert("❌ Error al guardar: " + data.mensaje);
+            } catch(e) { alert("❌ Error de conexión al guardar"); }
+        }
+
+        // ==========================================
+        // NUEVA FUNCIÓN PARA LAS PESTAÑAS DE CAJA
+        // ==========================================
+        function cambiarSubCaja(seccion) {
+            // Ocultar todas las sub-vistas
+            const vistas = document.querySelectorAll('.sub-caja-view');
+            vistas.forEach(vista => {
+                vista.classList.remove('active-sub-caja');
+            });
+
+            // Mostrar la seleccionada
+            document.getElementById('sub-caja-' + seccion).classList.add('active-sub-caja');
+
+            // Actualizar botones visualmente
+            const botones = document.querySelectorAll('#section-administrarcajas .event-tab-btn');
+            botones.forEach(btn => btn.classList.remove('active-event-tab'));
+            document.getElementById('tab-caja-' + seccion).classList.add('active-event-tab');
+        }
+    </script>
+    
+    <script src="/js/admin.js"></script>
+</body>
+</html>

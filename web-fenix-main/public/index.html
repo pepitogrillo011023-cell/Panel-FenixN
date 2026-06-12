@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/images/logo-192.png">
+
+<meta name="theme-color" content="#f59e0b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Casino Fénix">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casino Fénix - Acceso</title>
+    <link rel="stylesheet" href="css/index.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="header">
+            <div class="header-title">
+                <div class="status-dot"></div>
+                <span id="header-title-text">Casino Fénix</span>
+                <span id="badge-creditos" class="badge-creditos hidden">🟡 <span id="txt-creditos">0</span> CR</span>
+            </div>
+          <div id="notificacion-bell" style="cursor: pointer; position: relative; margin-left: auto; margin-right: 15px; font-size: 20px;">
+    🔔
+    <span id="badge-contador" style="display:none; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; position: absolute; top: -5px; right: -8px;">0</span>
+
+    <div id="notificacion-popup" style="display: none; position: absolute; top: 30px; right: 0; width: 280px; background: #1f2937; border: 1px solid #4b5563; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.6); z-index: 9999; font-family: sans-serif; cursor: default;">
+        
+        <div style="padding: 10px; border-bottom: 1px solid #4b5563; font-weight: bold; color: #fff; text-align: center; font-size: 14px;">
+            Notificaciones
+        </div>
+        
+        <ul id="lista-notificaciones" style="list-style: none; margin: 0; padding: 0; max-height: 250px; overflow-y: auto;">
+            <li id="sin-notificaciones" style="padding: 15px; color: #9ca3af; text-align: center; font-size: 13px;">
+                No tenés notificaciones nuevas
+            </li>
+        </ul>
+    </div>
+</div>
+            <div class="user-menu-dropdown">
+    <button id="btn-user-menu" class="btn-dots" aria-label="Menú de usuario">
+        ⋮
+    </button>
+    <div id="dropdown-menu-content" class="dropdown-content">
+        <a href="#" id="btn-change-password">🔐 Cambiar contraseña</a>
+        <a href="/logout-cliente" id="btn-user-logout">🚪 Cerrar sesión</a>
+    </div>
+</div>
+        </div>
+
+        <div id="vista-login" class="auth-body">
+    <h3>Acceso de Clientes</h3>
+    <input type="text" id="login-user" class="input-dark" placeholder="Usuario...">
+    <input type="password" id="login-pass" class="input-dark" placeholder="Contraseña...">
+    <button class="btn-primary" id="btn-login" onclick="validarAccesoManual()">Ingresar al Chat</button>
+    
+    <div style="margin-top: 15px; text-align: center;">
+        <span style="color: #64748b; font-size: 13px;">¿No tenés cuenta?</span>
+        <a href="registro.html" style="color: #6366f1; text-decoration: none; font-size: 13px; font-weight: bold; margin-left: 5px;">Registrate aquí</a>
+    </div>
+</div>
+
+        <div id="vista-chat" class="hidden" style="flex-grow: 1; display: flex; flex-direction: column; height: 100%; padding-bottom: 20px;">
+            <div id="hero-welcome-container" class="hero-welcome hidden">
+                <h2 id="welcome-name">¡Hola, Nahue!</h2>
+                <p>Bienvenido nuevamente a Fénix 🦅</p>
+            </div>
+            <div class="contenedor-alianzas" style="display: flex; gap: 10px; margin: 15px 0;">
+        <a href="https://ganamosnet.org/home" target="_blank" class="btn-externo btn-ganamos">IR A GANAMOS</a>
+        <a href="https://oropuro.site" target="_blank" class="btn-externo btn-oropuro">IR A OROPURO</a>
+           </div>
+          <div id="banner-push" style="background: linear-gradient(135deg, #1f2937, #111827); border: 2px solid #f59e0b; padding: 15px; margin: 15px 0; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5);">
+    <h3 style="color: #fff; margin: 0 0 5px 0; font-size: 15px; font-family: sans-serif; font-weight: bold;">🔔 ¡Recibí tus Regalos de Retención!</h3>
+    <p style="color: #9ca3af; margin: 0 0 12px 0; font-size: 12px; font-family: sans-serif;">Activá las alertas push para recibir bonos automáticos y avisos de carga.</p>
+    <button onclick="solicitarPermisoPush()" style="background: #f59e0b; color: #000; border: none; padding: 10px 20px; font-weight: bold; border-radius: 8px; cursor: pointer; font-size: 13px; width: 100%; box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);">
+        ACTIVAR ALERTAS 🚀
+    </button>
+</div>
+            
+            <div class="chat-messages" id="messages-area" style="flex-grow: 1; overflow-y: auto;"></div>
+            
+            <div id="container-menu-options" class="menu-grid" style="display: none; margin-top: auto; gap: 12px;">
+                <button class="btn-action" style="padding: 14px;" onclick="seleccionarOpcion('Depósito')">💰 Cargar</button>
+                <button class="btn-action" style="padding: 14px;" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
+               <button id="btn-soporte-cliente" class="btn-action" style="padding: 14px; position: relative;" onclick="seleccionarOpcion('Soporte')">
+    🛠️ Soporte
+    <span id="puntito-soporte" style="
+        display: none; 
+        position: absolute; 
+        top: 6px; 
+        right: 8px; 
+        width: 9px; 
+        height: 9px; 
+        background-color: #ef4444; /* Rojo alerta */
+        border-radius: 50%;
+        box-shadow: 0 0 8px #ef4444;
+    "></span>
+</button>
+                <button class="btn-action" style="padding: 14px;" onclick="seleccionarOpcion('Referido')">🎁 Referí</button>
+                <button class="btn-action" style="grid-column: span 2; padding: 14px;" onclick="abrirModal('cargar-creditos')">🟡 Cargar Créditos</button>
+                <button class="btn-action" style="grid-column: span 2; background: #7c3aed; padding: 14px;" onclick="abrirTienda()">🛒 TIENDA</button>
+                <button class="btn-action" style="grid-column: span 2; background: linear-gradient(90deg, #6366f1, #a855f7); padding: 14px;" onclick="mostrarSubMenuMinijuegos()">🎮 Minijuegos</button>
+            </div>
+
+            <div id="container-games-options" class="menu-grid" style="display: none; grid-template-columns: 1fr 1fr 1fr; margin-top: auto; gap: 12px;">
+                
+                <button class="btn-action" style="padding: 12px 2px; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;" onclick="abrirModal('ruleta')">
+                    <span style="font-size: 22px;">🎯</span> Ruleta
+                </button>
+                <button class="btn-action" style="padding: 12px 2px; font-size: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; line-height: 1.1;" onclick="abrirModal('raspa')">
+                    <span style="font-size: 22px;">🎫</span> Raspa y gana
+                </button>
+                <button class="btn-action" style="padding: 12px 2px; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;" onclick="abrirModal('traga')">
+                    <span style="font-size: 22px;">🍒</span> Slot
+                </button>
+                
+                <button class="btn-action" style="grid-column: span 3; padding: 16px; font-weight: bold;" onclick="abrirSlotPremium()">💎 JUGAR MINI JOKER 💎</button>
+                <button class="btn-action" style="grid-column: span 3; background:#374151; padding: 14px;" onclick="irAlMenuPrincipal()">↩️ Volver</button>
+            </div>
+
+            <div id="container-chat-input" class="chat-input-area" style="display: none; margin-top: auto; padding: 14px; background-color: #1f2937; border-top: 1px solid #374151; border-radius: 0 0 12px 12px; gap: 8px; align-items: center;">
+                
+                <button class="btn-action" style="padding: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; flex-shrink: 0; margin: 0; background: #374151;" onclick="irAlMenuPrincipal()">
+                    <span style="font-size: 18px; line-height: 1;">⬅️</span>
+                </button>
+
+                <input type="text" id="client-raw-input" class="input-dark" style="margin: 0; flex-grow: 1; height: 44px; padding: 0 12px; border-radius: 8px;" placeholder="Escribí acá...">
+                
+                <button class="btn-primary" style="margin: 0; height: 44px; padding: 0 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center;" onclick="enviarMensajeLibreCliente()">
+                    Enviar
+                </button>
+                
+            </div>
+            <div id="container-retiro-form" style="display: none; flex-direction: column; gap: 10px; padding: 20px; background-color: #1f2937; border-radius: 12px; color: white;">
+    <h3 style="margin-top: 0;">💸 Solicitar Retiro</h3>
+
+    <label>Plataforma:</label>
+    <select id="select-plataforma-retiro" style="padding: 10px; border-radius: 8px; border: 1px solid #374151; background: #111827; color: white;">
+        <option value="">Seleccionar plataforma...</option>
+        <option value="Oropuro">✨ Oropuro</option>
+        <option value="Ganamos">🌲 Ganamos</option>
+        <option value="Créditos">🟡 Créditos Locales</option>
+    </select>
+    
+    <label>Monto a retirar:</label>
+    <input type="number" id="input-monto-retiro" placeholder="Ej: 5000" style="padding: 10px; border-radius: 8px; border: 1px solid #374151; background: #111827; color: white;">
+    
+    <label>CBU o Alias:</label>
+    <input type="text" id="input-cbu-alias" placeholder="Ej: cbu.alias.ejemplo" style="padding: 10px; border-radius: 8px; border: 1px solid #374151; background: #111827; color: white;">
+    
+    <label>Nombre del Titular:</label>
+    <input type="text" id="input-titular" placeholder="Ej: Juan Perez" style="padding: 10px; border-radius: 8px; border: 1px solid #374151; background: #111827; color: white;">
+    
+    <button onclick="solicitarRetiro()" class="btn-primary" style="padding: 14px; border-radius: 8px; cursor: pointer;">Confirmar Retiro</button>
+    <button onclick="irAlMenuPrincipal()" style="padding: 14px; border-radius: 8px; background: #374151; color: white; border: none; cursor: pointer;">Volver al Menú</button>
+</div>
+            <div id="modal-referidos" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="border-color: #8b5cf6;">
+        <h3 style="color:white; margin-top:0; font-size: 22px;">🎁 Invitá y Ganá</h3>
+        <p style="color: #cbd5e1; font-size:14px; margin:5px 0 15px 0;">
+            Compartí este link con tus amigos y ganá <b>5.000 créditos</b> por cada uno que se registre:
+        </p>
+        
+        <input type="text" id="input-link-referido" class="input-dark" readonly style="margin-bottom:15px; text-align:center; color: #a78bfa;">
+        
+        <button class="btn-spin" style="background: #8b5cf6; width:100%; border:none; margin-bottom: 10px;" onclick="copiarLinkReferido()">
+            🗐 COPIAR LINK 🗐
+        </button>
+        
+        <button class="btn-action btn-close-modal" style="width:100%; background-color:#374151;" onclick="cerrarModal('referidos')">Cerrar</button>
+    </div>
+</div>
+
+    <div id="modal-cargar-creditos" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="border-color: #ffaa00;">
+        <h3 style="color:white; margin-top:0; font-size: 20px;">🟡 Comprar Créditos</h3>
+        <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Transferí y enviá el comprobante para recargar tus créditos de minijuegos.</p>
+        
+        <input type="number" id="input-creditos-monto" class="input-dark" placeholder="Monto transferido ($)..." style="width:100%; box-sizing:border-box; margin-bottom:10px;">
+        
+        <label style="color: #a1a1aa; font-size: 13px; display: block; text-align: left; margin-bottom: 5px;">Adjuntar foto del comprobante:</label>
+        <input type="file" id="input-creditos-comprobante" class="input-dark" accept="image/*" style="width:100%; box-sizing:border-box; margin-bottom:15px; padding: 10px;">
+        
+       <button id="btn-enviar-reporte" class="btn-spin" onclick="enviarSolicitudCreditos(event)" style="background: #ffaa00; color: #000; margin-top:10px; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.4); width: 100%;">ENVIAR REPORTE</button>
+        <button class="btn-action btn-close-modal" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('cargar-creditos')">Cancelar</button>
+    </div>
+</div>
+
+    <div id="modal-ruleta" class="modal-overlay" style="display:none;">
+        <div class="modal-content">
+            <h3 style="color:white; margin-top:0; font-size: 22px;">🎰 Ruleta de Premios</h3>
+            <div class="ruleta-container"><div class="ruleta-pointer">▼</div><canvas id="ruleta-canvas" width="280" height="280"></canvas></div>
+            <button id="btn-spin-ruleta" class="btn-spin" onclick="jugarRuleta()">GIRAR AHORA</button>
+            <button class="btn-action btn-close-modal hidden" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('ruleta')">Volver</button>
+        </div>
+    </div>
+
+    <div id="modal-raspa" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="border-color: #10b981;">
+            <h3 style="color:white; margin-top:0; font-size: 22px;">🎫 Raspa y Gana</h3>
+            <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Elegí 1 casillero para raspar.</p>
+            <div class="raspa-grid-board" id="client-tablero-raspa">
+                </div>
+            <button class="btn-action btn-close-modal hidden" style="margin-top:15px; width:100%; background-color:#374151;" onclick="cerrarModal('raspa')">Volver al Menú</button>
+        </div>
+    </div>
+
+    <div id="modal-traga" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="border-color: #ec4899;">
+            <h3 style="color:white; margin-top:0; font-size: 22px;">🍒 Tragamonedas</h3>
+            <div class="slot-machine">
+                <div class="slot-reel" id="client-slot-1">🎰</div>
+                <div class="slot-reel" id="client-slot-2">🎰</div>
+                <div class="slot-reel" id="client-slot-3">🎰</div>
+            </div>
+            <button id="btn-spin-traga" class="btn-spin" style="background: linear-gradient(90deg, #ec4899, #8b5cf6);" onclick="jugarTragamonedas()">TIRAR PALANCA</button>
+            <button class="btn-action btn-close-modal hidden" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('traga')">Volver</button>
+        </div>
+    </div>
+
+    <div id="modal-cartas" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="border-color: #f97316;">
+            <h3 style="color:white; margin-top:0; font-size: 22px;">🃏 Carta de la Suerte</h3>
+            <div class="card-flip" onclick="jugarCartas()">
+                <div class="card-inner" id="client-card">
+                    <div class="card-front">?</div>
+                    <div class="card-back">
+                        <div id="client-card-val" style="font-size:40px; font-weight:bold;">🃏</div>
+                        <div id="client-card-desc" style="font-size:14px; margin-top:10px;"></div>
+                    </div>
+                </div>
+            </div>
+            <p style="color: #64748b; font-size:12px; margin:5px 0;">Tocá la carta para revelar tu premio.</p>
+            <button class="btn-action btn-close-modal hidden" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('cartas')">Volver</button>
+        </div>
+    </div>
+
+    <div id="modal-moneda" class="modal-overlay" style="display:none;">
+        <div class="modal-content" style="border-color: #eab308;">
+            <h3 style="color:white; margin-top:0; font-size: 22px;">🪙 Cara o Cruz</h3>
+            <div class="coin-flip" id="client-coin" onclick="jugarMoneda()">🪙</div>
+            <p style="color: #64748b; font-size:12px; margin:5px 0;">Tocá la moneda para lanzarla.</p>
+            <button class="btn-action btn-close-modal hidden" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('moneda')">Volver</button>
+        </div>
+    </div>
+
+    <div id="modal-tienda" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="background:#1f2937; border: 2px solid #7c3aed; color:white; padding:20px; border-radius:15px; width:90%; max-width:400px; text-align:center;">
+        <h3>🛒 Tienda de Bonos</h3>
+        
+        <div id="contenedor-productos-tienda" class="tienda-grid">
+            </div>
+        
+        <button class="btn-text" style="margin-top: 15px;" onclick="cerrarModal('tienda')">Cerrar</button>
+    </div>
+</div>
+
+    <div id="modal-victoria" class="modal-victoria" style="display:none;">
+        <div class="victoria-content">
+            <div class="victoria-emoji" id="vic-emoji">🎉</div>
+            <h2 style="color:white;">¡RESULTADO!</h2>
+            <p id="vic-msg" style="color:#cbd5e1; font-size: 14px;"></p>
+            <button class="btn-spin" onclick="cerrarModalVictoria()">Aceptar</button>
+        </div>
+    </div>
+            <script>
+    // Función auxiliar obligatoria para procesar la clave de seguridad del servidor
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    async function solicitarPermisoPush() {
+        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+            alert('🚫 Este dispositivo o navegador no soporta notificaciones push nativas.');
+            return;
+        }
+
+        // Pedimos el permiso nativo
+        const permiso = await Notification.requestPermission();
+        if (permiso !== 'granted') {
+            alert('⚠️ No diste permiso para las notificaciones. Restablecé los permisos desde el candado de la URL.');
+            return;
+        }
+
+        try {
+            // VERIFICACIÓN DEL SERVICE WORKER (Para evitar congelamientos)
+            let reg = await navigator.serviceWorker.getRegistration();
+            
+            // Si el navegador no lo tiene activo, intentamos registrar el archivo básico obligatoriamente
+            if (!reg) {
+                alert("🔧 Registrando Service Worker en el teléfono...");
+                reg = await navigator.serviceWorker.register('/sw.js').catch(err => {
+                    throw new Error("Falta el archivo 'sw.js' en la raíz de tu proyecto o falló su carga: " + err.message);
+                });
+            }
+
+            // Esperamos que esté 100% disponible
+            const readyReg = await navigator.serviceWorker.ready;
+
+            // Verificamos conexión del túnel del casino
+            if (typeof socket === 'undefined' || !socket.connected) {
+                throw new Error("El casino no está conectado al servidor de alertas en este momento.");
+            }
+
+            alert("📡 Sincronizando llaves criptográficas con Casino Fénix...");
+
+            // Pedimos la clave pública por el Socket seguro
+            socket.emit('solicitar_clave_vapid');
+
+            // Escuchamos la respuesta una única vez
+            socket.once('respuesta_clave_vapid', async (data) => {
+                try {
+                    if (!data || !data.publicKey) {
+                        throw new Error("El servidor no envió una clave VAPID válida. Revisá Render.");
+                    }
+
+                    // Generamos el Token único para este celular
+                    const suscripcion = await readyReg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(data.publicKey)
+                    });
+
+                    // Enviamos la suscripción al Backend por el Socket de 'Adidas'
+                    socket.emit('guardar_suscripcion_push', { subscription: suscripcion });
+
+                    // 🔥 [NUEVO] Guardamos permanentemente en la memoria del dispositivo que ya aceptó
+                    localStorage.setItem('notificaciones_activadas', 'true');
+
+                    alert('¡Excelente! Notificaciones vinculadas con éxito. 🦅🎁');
+                    
+                    // Ocultamos los banners de inmediato
+                    ocultarBannersPush();
+
+                } catch (errInner) {
+                    alert("❌ Error en suscripción interna: " + errInner.message);
+                }
+            });
+
+        } catch (error) {
+            // ¡Si se congela o rompe, este cartel te va a cantar el motivo exacto!
+            alert("⚠️ Alerta del sistema: " + error.message);
+        }
+    }
+
+    // 🔥 [NUEVA FUNCIÓN] Encargada de limpiar la pantalla eliminando los banners
+    function ocultarBannersPush() {
+        if (document.getElementById('banner-push')) document.getElementById('banner-push').style.display = 'none';
+        if (document.getElementById('btn-menu-push')) document.getElementById('btn-menu-push').style.display = 'none';
+    }
+
+    // 🔥 [NUEVA FUNCIÓN] Se autoejecuta al cargar la app para comprobar si se esconde el banner de una
+    function verificarEstadoNotificaciones() {
+        const yaAceptoLocal = localStorage.getItem('notificaciones_activadas') === 'true';
+        const tienePermisoNativo = ('Notification' in window) && Notification.permission === 'granted';
+
+        // Si ya aceptó en este navegador O el permiso del candado ya está concedido nativamente:
+        if (yaAceptoLocal || tienePermisoNativo) {
+            // Intentamos ocultarlo al instante
+            ocultarBannersPush();
+            
+            // Reforzamos la ejecución cuando el HTML termine de procesarse por completo
+            document.addEventListener('DOMContentLoaded', ocultarBannersPush);
+        }
+    }
+
+    // Iniciamos la verificación automática apenas se lee este script
+    verificarEstadoNotificaciones();
+</script>
+            <script>
+(function() {
+    window.enviarSolicitudCreditos = async function(event) {
+        if (event) event.preventDefault();
+
+        const montoInput = document.getElementById('input-creditos-monto');
+        const archivoInput = document.getElementById('input-creditos-comprobante');
+
+        if (!montoInput || !montoInput.value || !archivoInput || !archivoInput.files[0]) {
+            alert("⚠️ Por favor, ingresá el monto y subí una foto del comprobante.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('usuario', window.usuarioLogueado || localStorage.getItem('casino_fenix_user') || 'Cliente'); 
+        formData.append('plataforma', 'Créditos'); 
+        formData.append('monto', montoInput.value);
+        formData.append('comprobante', archivoInput.files[0]);
+
+        try {
+            const respuesta = await fetch('/api/subir-comprobante', {
+                method: 'POST',
+                body: formData
+            });
+
+            const resultado = await respuesta.json();
+
+            if (resultado.exito) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Comprobante Enviado! 💰',
+                        text: 'Tu solicitud de créditos está en revisión por el administrador.',
+                        background: '#1e1e1e',
+                        color: '#fff',
+                        confirmButtonColor: '#ffaa00'
+                    });
+                } else {
+                    alert("¡Solicitud enviada! Tu saldo se actualizará cuando el administrador la apruebe.");
+                }
+
+                if (typeof socket !== 'undefined' && socket) {
+                    socket.emit('cliente_envia_mensaje_libre', { 
+                        mensaje: `📥 CARGA CRÉDITOS REPORTADA:\n👤 Usuario: ${localStorage.getItem('casino_fenix_user') || 'Cliente'}\n💰 Monto: $${montoInput.value}` 
+                    });
+                }
+
+                montoInput.value = '';
+                archivoInput.value = '';
+                
+                if (typeof cerrarModal === 'function') {
+                    cerrarModal('cargar-creditos');
+                } else {
+                    const modal = document.getElementById('cargar-creditos');
+                    if (modal) modal.style.display = 'none';
+                }
+
+            } else {
+                alert("Error: " + resultado.mensaje);
+            }
+        } catch (error) {
+            console.error("Error crítico en enviarSolicitudCreditos:", error);
+            alert("Hubo un error de red al intentar subir el comprobante.");
+        }
+    };
+})();
+</script>
+             <script src="js/index.js"></script>
+            <script src="/socket.io/socket.io.js"></script>
+</body>
+</html>

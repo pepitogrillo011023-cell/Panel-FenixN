@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estadísticas y Arqueo de Caja - Club Fenix</title>
+    <link rel="stylesheet" href="/css/admin.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        .stats-layout { flex: 1; padding: 24px 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        .stats-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .stats-header h1 { margin: 0; color: #f8fafc; font-size: 22px; }
+        .stats-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .stats-filters label { font-size: 12px; color: #94a3b8; font-weight: 600; }
+        .stats-filters input[type="date"] {
+            background: #0f172a; border: 1px solid #374151; color: white;
+            padding: 8px 12px; border-radius: 8px; font-size: 13px;
+        }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 1100px) { .stats-grid { grid-template-columns: 1fr; } }
+        .chart-card, .table-card, .history-card {
+            background: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 20px;
+        }
+        .card-title { color: #38bdf8; font-size: 14px; font-weight: 700; margin: 0 0 16px 0; text-transform: uppercase; letter-spacing: 0.5px; }
+        .chart-wrap { position: relative; height: 320px; }
+        .input-fichas {
+            width: 110px; background: #0f172a; border: 1px solid #374151; color: white;
+            padding: 6px 8px; border-radius: 6px; text-align: right;
+        }
+        .saldo-pos { color: #34d399; font-weight: 700; }
+        .saldo-neg { color: #f87171; font-weight: 700; }
+        .diff-ok { color: #34d399; }
+        .diff-warn { color: #fbbf24; }
+        .stats-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 8px; }
+        .btn-secondary {
+            background: #374151; color: white; border: none; padding: 12px 20px;
+            border-radius: 8px; font-weight: bold; cursor: pointer;
+        }
+        .btn-secondary:hover { background: #4b5563; }
+        .back-link { color: #38bdf8; text-decoration: none; font-size: 13px; font-weight: 600; }
+        .back-link:hover { text-decoration: underline; }
+        .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+        @media (max-width: 1100px) { .summary-row { grid-template-columns: repeat(2, 1fr); } }
+        .mini-stat { background: #0f172a; border: 1px solid #1f2937; border-radius: 10px; padding: 14px; text-align: center; }
+        .mini-stat .label { font-size: 11px; color: #64748b; text-transform: uppercase; }
+        .mini-stat .value { font-size: 22px; font-weight: 800; color: #f8fafc; margin-top: 4px; }
+        .history-item { border: 1px solid #1f2937; border-radius: 8px; padding: 12px; margin-bottom: 10px; background: #0f172a; }
+        .history-item header { display: flex; justify-content: space-between; color: #94a3b8; font-size: 12px; margin-bottom: 8px; }
+        .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .history-table th, .history-table td { padding: 6px 8px; border-bottom: 1px solid #1f2937; text-align: left; }
+        .history-table th { color: #64748b; }
+        .loading-text { color: #64748b; font-size: 13px; padding: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <h2>⚡ Club Fenix</h2>
+        <div class="menu-category">Finanzas</div>
+        <a href="/admin/estadisticas.html" class="nav-btn active-nav" style="text-decoration:none;">📊 Estadísticas y Arqueo</a>
+        <a href="/admin.html" class="nav-btn" style="text-decoration:none;">← Volver al Panel</a>
+        <div class="menu-category">Sistema</div>
+        <a href="/logout" class="btn-sidebar-logout" style="text-decoration:none; display:block; text-align:center;">❌ Cerrar Sesión</a>
+    </div>
+
+    <div class="main-content">
+        <div class="top-bar">
+            <span>Estadísticas y Arqueo de Caja</span>
+            <a href="/admin.html" class="back-link">Panel principal</a>
+        </div>
+
+        <div class="stats-layout">
+            <div class="stats-header">
+                <h1>Dashboard en tiempo real</h1>
+                <div class="stats-filters">
+                    <label>Inicio <input type="date" id="filter-start"></label>
+                    <label>Fin <input type="date" id="filter-end"></label>
+                    <button class="btn-action-small info" id="btn-refresh">Actualizar</button>
+                </div>
+            </div>
+
+            <div class="summary-row" id="summary-cards"></div>
+
+            <div class="stats-grid">
+                <div class="chart-card">
+                    <h3 class="card-title">Cargas vs Retiros por plataforma</h3>
+                    <div class="chart-wrap">
+                        <canvas id="stats-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="table-card">
+                    <h3 class="card-title">Arqueo del período</h3>
+                    <table class="data-table" id="stats-table">
+                        <thead>
+                            <tr>
+                                <th>Plataforma</th>
+                                <th>Cargas</th>
+                                <th>Retiros</th>
+                                <th>Saldo Panel</th>
+                                <th>Fichas Actuales</th>
+                                <th>Diferencia</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stats-tbody"></tbody>
+                    </table>
+                    <div class="stats-actions">
+                        <button class="btn-secondary" id="btn-load-history">Ver historial</button>
+                        <button class="btn-save" id="btn-close-caja">Cerrar Caja</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="history-card" id="history-section" style="display:none;">
+                <h3 class="card-title">Historial de cierres</h3>
+                <div id="history-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let statsChart = null;
+        let currentPlatforms = [];
+
+        function formatMoney(value) {
+            return new Intl.NumberFormat('es-AR', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            }).format(Number(value) || 0);
+        }
+
+        function todayISO() {
+            return new Date().toISOString().slice(0, 10);
+        }
+
+        function setDefaultDates() {
+            document.getElementById('filter-start').value = todayISO();
+            document.getElementById('filter-end').value = todayISO();
+        }
+
+        async function fetchJSON(url, options) {
+            const res = await fetch(url, options);
+            if (res.status === 401 || res.redirected) {
+                window.location.href = '/login.html';
+                throw new Error('No autorizado');
+            }
+            return res.json();
+        }
+
+        function renderSummary(platforms, newUsers24h, newUserHours) {
+            const totalCargas = platforms.reduce((sum, p) => sum + p.total_charges, 0);
+            const totalRetiros = platforms.reduce((sum, p) => sum + p.total_withdrawals, 0);
+            const totalSaldo = platforms.reduce((sum, p) => sum + p.panel_balance, 0);
+            const horasLabel = newUserHours || 24;
+
+            document.getElementById('summary-cards').innerHTML = `
+                <div class="mini-stat">
+                    <div class="label">Total cargas</div>
+                    <div class="value" style="color:#34d399;">$${formatMoney(totalCargas)}</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="label">Total retiros</div>
+                    <div class="value" style="color:#f87171;">$${formatMoney(totalRetiros)}</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="label">Saldo panel neto</div>
+                    <div class="value" style="color:#38bdf8;">$${formatMoney(totalSaldo)}</div>
+                </div>
+                <div class="mini-stat">
+                    <div class="label">Usuarios nuevos (${horasLabel}hs)</div>
+                    <div class="value" style="color:#22c55e;">${newUsers24h || 0}</div>
+                </div>
+            `;
+        }
+
+        function renderChart(platforms) {
+            const labels = platforms.map(p => p.platform_name);
+            const cargas = platforms.map(p => p.total_charges);
+            const retiros = platforms.map(p => p.total_withdrawals);
+
+            const ctx = document.getElementById('stats-chart');
+            if (statsChart) statsChart.destroy();
+
+            statsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [
+                        {
+                            label: 'Cargas',
+                            data: cargas,
+                            backgroundColor: 'rgba(52, 211, 153, 0.75)',
+                            borderColor: '#34d399',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Retiros',
+                            data: retiros,
+                            backgroundColor: 'rgba(248, 113, 113, 0.75)',
+                            borderColor: '#f87171',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#cbd5e1' } }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(55, 65, 81, 0.4)' }
+                        },
+                        y: {
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: 'rgba(55, 65, 81, 0.4)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateRowDiff(input) {
+            const tr = input.closest('tr');
+            const panelBalance = Number(tr.dataset.panelBalance) || 0;
+            const fichas = Number(input.value) || 0;
+            const diff = fichas - panelBalance;
+            const diffCell = tr.querySelector('.diff-cell');
+            diffCell.textContent = formatMoney(diff);
+            diffCell.className = 'diff-cell ' + (Math.abs(diff) < 0.01 ? 'diff-ok' : 'diff-warn');
+        }
+
+        function renderTable(platforms) {
+            currentPlatforms = platforms;
+            const tbody = document.getElementById('stats-tbody');
+            tbody.innerHTML = platforms.map((p, index) => {
+                const saldoClass = p.panel_balance >= 0 ? 'saldo-pos' : 'saldo-neg';
+                return `
+                    <tr data-platform="${p.platform_name}" data-panel-balance="${p.panel_balance}">
+                        <td><strong>${p.platform_name}</strong></td>
+                        <td>$${formatMoney(p.total_charges)}</td>
+                        <td>$${formatMoney(p.total_withdrawals)}</td>
+                        <td class="${saldoClass}">$${formatMoney(p.panel_balance)}</td>
+                        <td>
+                            <input type="number" class="input-fichas" id="fichas-${index}"
+                                min="0" step="0.01" placeholder="0" value="0"
+                                oninput="updateRowDiff(this)">
+                        </td>
+                        <td class="diff-cell diff-warn">0</td>
+                    </tr>
+                `;
+            }).join('');
+
+            tbody.querySelectorAll('.input-fichas').forEach(updateRowDiff);
+        }
+
+        async function loadLiveStats() {
+            const start = document.getElementById('filter-start').value;
+            const end = document.getElementById('filter-end').value;
+
+            if (!start || !end) {
+                alert('Seleccioná fecha de inicio y fin.');
+                return;
+            }
+
+            try {
+                const data = await fetchJSON(`/api/stats/live?start=${start}&end=${end}`);
+                if (!data.exito) {
+                    alert(data.mensaje || 'Error al cargar estadísticas.');
+                    return;
+                }
+
+                renderSummary(data.platforms, data.new_users_24h, data.new_user_hours);
+                renderChart(data.platforms);
+                renderTable(data.platforms);
+            } catch (error) {
+                console.error(error);
+                alert('No se pudieron cargar las estadísticas.');
+            }
+        }
+
+        async function closeCaja() {
+            const start = document.getElementById('filter-start').value;
+            const end = document.getElementById('filter-end').value;
+
+            if (!currentPlatforms.length) {
+                alert('Actualizá las estadísticas antes de cerrar caja.');
+                return;
+            }
+
+            const confirmar = confirm(`¿Confirmar cierre de caja para el período ${start} al ${end}?`);
+            if (!confirmar) return;
+
+            const details = currentPlatforms.map((platform, index) => {
+                const input = document.getElementById(`fichas-${index}`);
+                return {
+                    platform_name: platform.platform_name,
+                    initial_fichas: Number(input?.value) || 0,
+                    total_charges: platform.total_charges,
+                    total_withdrawals: platform.total_withdrawals
+                };
+            });
+
+            try {
+                const data = await fetchJSON('/api/reports/close', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        report_date: end,
+                        details
+                    })
+                });
+
+                if (!data.exito) {
+                    alert(data.mensaje || 'Error al guardar el cierre.');
+                    return;
+                }
+
+                alert('✅ Cierre de caja guardado correctamente.');
+                await loadHistory();
+            } catch (error) {
+                console.error(error);
+                alert('Error al guardar el cierre de caja.');
+            }
+        }
+
+        async function loadHistory() {
+            const start = document.getElementById('filter-start').value;
+            const end = document.getElementById('filter-end').value;
+            const section = document.getElementById('history-section');
+            const list = document.getElementById('history-list');
+
+            section.style.display = 'block';
+            list.innerHTML = '<div class="loading-text">Cargando historial...</div>';
+
+            try {
+                const data = await fetchJSON(`/api/reports/history?start=${start}&end=${end}`);
+                if (!data.exito || !data.reports.length) {
+                    list.innerHTML = '<div class="loading-text">No hay cierres registrados en este período.</div>';
+                    return;
+                }
+
+                list.innerHTML = data.reports.map(report => {
+                    const fecha = new Date(report.report_date).toLocaleDateString('es-AR');
+                    const creado = new Date(report.created_at).toLocaleString('es-AR');
+                    const rows = (report.details || []).map(d => `
+                        <tr>
+                            <td>${d.platform_name}</td>
+                            <td>$${formatMoney(d.total_charges)}</td>
+                            <td>$${formatMoney(d.total_withdrawals)}</td>
+                            <td>$${formatMoney(d.panel_balance)}</td>
+                            <td>$${formatMoney(d.initial_fichas)}</td>
+                        </tr>
+                    `).join('');
+
+                    return `
+                        <div class="history-item">
+                            <header>
+                                <span>Cierre: ${fecha}</span>
+                                <span>Registrado: ${creado}</span>
+                            </header>
+                            <table class="history-table">
+                                <thead>
+                                    <tr>
+                                        <th>Plataforma</th>
+                                        <th>Cargas</th>
+                                        <th>Retiros</th>
+                                        <th>Saldo Panel</th>
+                                        <th>Fichas Actuales</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>
+                    `;
+                }).join('');
+            } catch (error) {
+                console.error(error);
+                list.innerHTML = '<div class="loading-text">Error al cargar el historial.</div>';
+            }
+        }
+
+        document.getElementById('btn-refresh').addEventListener('click', loadLiveStats);
+        document.getElementById('btn-close-caja').addEventListener('click', closeCaja);
+        document.getElementById('btn-load-history').addEventListener('click', loadHistory);
+
+        setDefaultDates();
+        loadLiveStats();
+    </script>
+</body>
+</html>

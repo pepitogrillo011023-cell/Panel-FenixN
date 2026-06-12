@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Restringido - Club Fenix</title>
+    <style>
+        body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; }
+        .login-box { background-color: #111827; padding: 40px; border-radius: 16px; border: 1px solid #1f2937; box-shadow: 0 10px 30px rgba(0,0,0,0.8); width: 320px; text-align: center; }
+        .login-box h2 { margin-top: 0; color: #38bdf8; margin-bottom: 5px; font-size: 22px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .login-box p { color: #64748b; font-size: 13px; margin-bottom: 25px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 12px; font-weight: bold; color: #94a3b8; margin-bottom: 5px; }
+        .input-group input { width: 100%; padding: 14px; background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; color: white; box-sizing: border-box; outline: none; font-size: 14px; transition: border 0.3s; }
+        .input-group input:focus { border-color: #38bdf8; }
+        .btn-login { width: 100%; padding: 14px; background-color: #2563eb; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; cursor: pointer; margin-top: 15px; transition: background 0.3s; }
+        .btn-login:hover { background-color: #1d4ed8; }
+        .error-msg { color: #ef4444; font-size: 12px; margin-top: 15px; display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="login-box">
+        <h2>⚡ Club Fenix</h2>
+        <p>Panel de Administración y Control</p>
+        
+        <form action="/login" method="POST">
+            <div class="input-group">
+                <label>Usuario Operador</label>
+                <input type="text" name="username" required autocomplete="off" placeholder="Ej: admin">
+            </div>
+            
+            <div class="input-group">
+                <label>Contraseña de Acceso</label>
+                <input type="password" name="password" required placeholder="••••••••">
+            </div>
+            
+            <button type="submit" class="btn-login">Ingresar al Sistema</button>
+        </form>
+    </div>
+
+</body>
+</html>

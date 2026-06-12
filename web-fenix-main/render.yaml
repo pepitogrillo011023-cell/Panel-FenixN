@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: casino-fenix
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: MONGO_URI
+        fromService:
+          type: redis # Esto es un placeholder, lo editaremos en la web

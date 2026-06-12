@@ -1,0 +1,342 @@
+body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; overflow: hidden; }
+
+.app-container { background-color: #111827; width: 340px; height: 95vh; max-height: 750px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid #1f2937; display: flex; flex-direction: column; }
+
+.header { background-color: #1f2937; padding: 15px; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #374151; }
+.header-title { display: flex; align-items: center; gap: 8px; }
+.status-dot { width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
+
+.badge-creditos { background-color: #ffaa00; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 5px; box-shadow: 0 0 8px rgba(255, 170, 0, 0.4); }
+
+.auth-body { padding: 40px 25px; display: flex; flex-direction: column; align-items: center; flex: 1; justify-content: center; }
+.auth-body h3 { margin-top: 0; margin-bottom: 20px; font-size: 18px; color: white; }
+.input-dark { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 12px 15px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 12px; font-size: 14px; outline: none; transition: border 0.3s; }
+.input-dark:focus { border-color: #38bdf8; }
+.input-dark::placeholder { color: #64748b; }
+.btn-primary { background-color: #2563eb; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.3s; margin-top: 5px; }
+.btn-primary:hover { background-color: #1d4ed8; }
+.btn-text { background: none; border: none; color: #94a3b8; font-size: 13px; cursor: pointer; margin-top: 15px; text-decoration: underline; }
+.btn-text:hover { color: white; }
+.btn-logout { background-color: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+.btn-logout:hover { background-color: #ef4444; color: white; }
+
+#vista-chat { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+
+.chat-messages { display: none; flex-direction: column; flex: 1; padding: 20px; overflow-y: auto; overflow-x: hidden; background-color: #0b0f19; }
+
+.bubble-wrapper { display: flex; flex-direction: column; margin-bottom: 14px; width: 100%; position: relative; }
+
+/* MODIFICADO: Agregamos flex y flex-direction para poder ordenar la hora al rincón */
+.bubble { 
+    max-width: 85%; 
+    padding: 12px; 
+    border-radius: 12px; 
+    font-size: 13.5px; 
+    line-height: 1.4; 
+    word-wrap: break-word; 
+    box-sizing: border-box; 
+    display: flex;
+    flex-direction: column;
+}
+
+.bubble.bot { background-color: #1f2937; color: #cbd5e1; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #374151; }
+.bubble.admin { background-color: #1e3a8a; color: #ffffff; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #2563eb; }
+.bubble.cliente { background-color: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+/* ============================================================== */
+/* NUEVO: Estilo para la hora dentro del chat del cliente         */
+/* ============================================================== */
+.hora-chat {
+    font-size: 10px;
+    align-self: flex-end; /* Tira la hora abajo a la derecha dentro del globo */
+    margin-top: 5px;
+    font-weight: normal;
+    color: rgba(255, 255, 255, 0.5); /* Blanco sutil semitransparente */
+}
+
+/* Ajuste fino para la hora del bot (hace juego con su texto grisáceo) */
+.bubble.bot .hora-chat {
+    color: rgba(203, 213, 225, 0.5);
+}
+/* ============================================================== */
+
+.status-text { font-size: 10px; color: #64748b; align-self: flex-end; margin-right: 5px; margin-top: 4px; font-weight: bold; display: block; }
+.status-text.visto { color: #38bdf8; }
+
+.chat-input-area { display: none; gap: 8px; border-top: 1px solid #1f2937; padding: 15px; background-color: #111827; width: 100%; box-sizing: border-box; }
+
+.menu-grid-main { display: flex; flex-direction: column; padding: 15px; background-color: #111827; border-top: 1px solid #1f2937; flex: 1; justify-content: flex-end; gap: 15px; }
+.grid-2-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid-3-cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+.deposit-grid { display: grid; grid-template-columns: 1fr 1fr 0.8fr; gap: 8px; padding: 15px; background-color: #111827; border-top: 1px solid #1f2937; }
+.btn-action { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 12px 5px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; transition: filter 0.2s; }
+.btn-action:hover { filter: brightness(1.1); }
+
+.hero-welcome { background: linear-gradient(135deg, #1e3a8a, #0f172a); border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #2563eb; margin-bottom: 10px; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.2); }
+.hero-welcome h2 { margin: 0 0 5px 0; font-size: 18px; color: #38bdf8; }
+.hero-welcome p { margin: 0; font-size: 13px; color: #cbd5e1; }
+
+.hidden { display: none !important; }
+
+/* MODALES */
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
+.modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 330px; background: #111827; padding: 25px; border-radius: 16px; border: 1px solid #ffaa00; box-shadow: 0 0 30px rgba(255, 170, 0, 0.4); text-align: center; box-sizing: border-box; }
+/* ESTILOS TIENDA PRO */
+.tienda-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Dos columnas prolijas */
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.producto-card {
+    background: #1e293b;
+    border: 1px solid #4f46e5;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s;
+}
+
+.producto-card:hover {
+    transform: scale(1.03);
+}
+
+.nombre-prod { 
+    font-weight: bold; 
+    color: white; 
+    margin-bottom: 5px; 
+    font-size: 0.85rem; 
+    text-align: center;
+}
+
+.precio-prod { 
+    color: #facc15; 
+    font-size: 1rem; 
+    font-weight: bold; 
+    margin-bottom: 10px; 
+}
+
+.btn-canjear-card {
+    background: #3b82f6;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: bold;
+    width: 100%;
+}
+
+.btn-canjear-card:hover {
+    background: #2563eb;
+}
+.btn-spin { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 25px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(255,170,0,0.3); }
+.btn-spin:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* MODAL VICTORIA GENÉRICO */
+.modal-victoria { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99999; justify-content: center; align-items: center; }
+.victoria-content { background: #111827; padding: 30px; border-radius: 20px; border: 2px solid #ffaa00; text-align: center; max-width: 280px; box-shadow: 0 0 40px rgba(255, 170, 0, 0.3); }
+.victoria-emoji { font-size: 60px; margin-bottom: 10px; }
+
+/* Ruleta */
+.ruleta-container { position: relative; width: 280px; height: 280px; margin: 0 auto; }
+.ruleta-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 10; font-size: 40px; color: #ffaa00; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+#ruleta-canvas { transition: transform 5s cubic-bezier(0.25, 0.1, 0.15, 1); width: 100%; height: 100%; border-radius: 50%; border: 3px solid #1f2937; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+/* Raspa */
+.raspa-grid-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin: 20px 0; }
+.raspa-block-card { width: 85px; height: 80px; background-color: #1f2937; border: 2px dashed #10b981; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s; box-sizing: border-box; }
+.raspa-block-card.scratched { background-color: #0b0f19; border-style: solid; border-color: #2563eb; }
+.raspa-block-card.others-revealed { background-color: #111827; border-style: solid; border-color: #374151; opacity: 0.65; }
+.raspa-cover-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #374151, #1f2937); display: flex; justify-content: center; align-items: center; color: #94a3b8; font-weight: bold; font-size: 22px; transition: opacity 0.4s; z-index: 2; }
+.raspa-prize-text { font-size: 10px; font-weight: bold; color: white; text-align: center; padding: 2px; line-height: 1.2; }
+.raspa-value-text { font-size: 11px; font-weight: bold; color: #38bdf8; margin-top: 3px; }
+/* Slots */
+.slot-machine { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+.slot-reel { width: 70px; height: 90px; background-color: #1f2937; border: 2px solid #ffaa00; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 40px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+/* Cartas */
+.card-flip { width: 140px; height: 200px; margin: 20px auto; perspective: 1000px; cursor: pointer; }
+.card-inner { width: 100%; height: 100%; position: relative; transition: transform 0.8s; transform-style: preserve-3d; }
+.card-inner.flipped { transform: rotateY(180deg); }
+.card-front, .card-back { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px solid #ffaa00; box-sizing: border-box; }
+.card-front { background: linear-gradient(135deg, #1f2937, #111827); color: #ffaa00; font-size: 60px; }
+.card-back { background-color: white; color: black; transform: rotateY(180deg); padding: 10px; }
+/* Moneda */
+.coin-flip { width: 150px; height: 150px; margin: 20px auto; background: radial-gradient(#fcd34d, #ca8a04); border-radius: 50%; border: 6px solid #fef08a; display: flex; justify-content: center; align-items: center; font-size: 60px; font-weight: bold; color: #713f12; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: transform 1.5s ease-out; cursor: pointer; }
+.coin-flip { width: 150px; height: 150px; margin: 20px auto; background: radial-gradient(#fcd34d, #ca8a04); border-radius: 50%; border: 6px solid #fef08a; display: flex; justify-content: center; align-items: center; font-size: 60px; font-weight: bold; color: #713f12; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: transform 1.5s ease-out; cursor: pointer; }
+.contenedor-alianzas {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-externo {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 13px;
+    color: white;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+.btn-externo:hover {
+    transform: scale(1.03);
+}
+
+/* Estilo Ganamos (Púrpura) */
+.btn-ganamos {
+    background: linear-gradient(135deg, #4a148c, #7b1fa2);
+}
+
+/* Estilo Oropuro (Dorado) */
+.btn-oropuro {
+    background: linear-gradient(135deg, #b8860b, #d4af37);
+    color: #000; /* Negro para que el texto resalte sobre el dorado */
+}
+/* Contenedor principal de la app (el que envuelve a todo el celular) */
+.app-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; 
+    gap: 8px; /* Bajamos un toque el espacio entre bloques para compactar */
+    padding: 12px; /* Un pelín más de aire en los bordes */
+    height: 100dvh; /* 🔥 CLAVE: Evita que las barras del celular corten el diseño abajo */
+    box-sizing: border-box;
+    background-color: #0b0f19; /* Tu color de fondo de Fénix */
+    overflow: hidden; /* Fuerza a que todo se adapte como una App fija sin scroll de más */
+}
+
+/* Ajuste opcional: Si ves que todavía queda muy justo, le bajás 5px al banner */
+.banner-promocional {
+    width: 100%;
+    height: 90px; /* De 95px lo bajamos a 90px */
+    background-color: #111827;
+    border: 1px dashed #374151;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4b5563;
+    font-size: 11px;
+    margin: 2px 0;
+}
+
+/* OPTIMIZADO: Cuadrícula de 4 botones un poco más altos */
+.acciones-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    width: 100%;
+}
+
+/* Botones de Cargar, Retirar, Soporte, Referí */
+.btn-accion {
+    background-color: #1e2937;
+    color: white;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    padding: 14px 10px; /* Le subimos el padding vertical para mejor tacto en celular */
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+
+.btn-accion:active {
+    background-color: #374151; /* Efecto feedback al tocar en el celular */
+}
+/* ==============================================================
+   MENÚ DESPLEGABLE DE TRES PUNTOS (HEADER)
+   ============================================================== */
+
+/* Contenedor relativo para que el menú se posicione justo abajo */
+.user-menu-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* El botón de los tres puntitos */
+.btn-dots {
+    background: none;
+    border: none;
+    color: #9ca3af; /* Gris claro de tu interfaz */
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    line-height: 1;
+}
+
+.btn-dots:hover {
+    color: #ffffff; /* Brilla al pasar el mouse */
+}
+
+/* Caja contenedora del menú desplegable */
+.dropdown-content {
+    display: none; /* Escondido por defecto */
+    position: absolute;
+    right: 0; /* Alineado al borde derecho de la pantalla */
+    top: 120%; /* Espacio justo abajo del botón */
+    background-color: #111827; /* Fondo oscuro premium a tono con Fénix */
+    border: 1px solid #374151; /* Borde sutil */
+    min-width: 170px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    z-index: 1000; /* Asegura que flote por encima de banners y botones */
+    overflow: hidden;
+}
+
+/* Clase dinámica que agregaremos con JS para mostrarlo */
+.dropdown-content.show {
+    display: block;
+    animation: fadeInDropdown 0.15s ease-out;
+}
+
+/* Opciones de adentro del menú */
+.dropdown-content a {
+    color: #d1d5db;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+/* Efecto hover general de las opciones */
+.dropdown-content a:hover {
+    background-color: #1f2937;
+    color: #ffffff;
+}
+
+/* Estilo especial destructivo para Cerrar Sesión al pasar el mouse */
+#btn-user-logout:hover {
+    background-color: #311b1b;
+    color: #f87171;
+}
+
+/* Animación sutil de aparición */
+@keyframes fadeInDropdown {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

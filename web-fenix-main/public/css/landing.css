@@ -1,0 +1,47 @@
+/* Estilos Globales */
+body { margin: 0; font-family: 'Arial', sans-serif; background: #121212; color: white; display: flex; flex-direction: column; align-items: center; text-align: center; }
+.hero { padding: 80px 20px; max-width: 800px; }
+h1 { color: #f59e0b; font-size: 3rem; margin-bottom: 20px; }
+p { font-size: 1.2rem; color: #ccc; margin-bottom: 40px; }
+
+/* Botón Normal (Hero) */
+.cta-button { 
+    background: #f59e0b; color: #121212; padding: 20px 40px; 
+    text-decoration: none; font-weight: bold; font-size: 1.2rem; 
+    border-radius: 8px; transition: 0.3s; 
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+    display: inline-block; /* Asegura que se vea bien en el texto */
+}
+
+/* Botón Flotante (Sticky) */
+.cta-floating { 
+    position: fixed; bottom: 30px; right: 30px; z-index: 1000;
+    background: #f59e0b; color: #121212; padding: 20px 40px; 
+    text-decoration: none; font-weight: bold; font-size: 1.2rem; 
+    border-radius: 8px; transition: 0.3s; 
+    box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+/* Efectos Hover (Se aplican a ambos) */
+.cta-button:hover, .cta-floating:hover { 
+    background: #d97706; transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(245, 158, 11, 0.6);
+}
+
+/* Ajuste Móvil */
+@media (max-width: 600px) {
+    .cta-floating { right: 15px; bottom: 20px; padding: 15px 25px; font-size: 1rem; }
+}
+
+/* Tarjetas y Pasos */
+.features { display: flex; gap: 20px; padding: 40px; flex-wrap: wrap; justify-content: center; }
+.card { background: #1e1e1e; padding: 20px; border-radius: 10px; width: 250px; border: 1px solid #333; transition: transform 0.3s ease; }
+.card:hover { transform: translateY(-10px); border-color: #f59e0b; }
+
+.pasos-container { display: flex; justify-content: center; gap: 30px; margin-top: 40px; flex-wrap: wrap; }
+.paso { width: 200px; padding: 20px; text-align: center; }
+.paso-num { font-size: 2rem; color: #f59e0b; font-weight: bold; }
+
+/* Animación */
+@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+.fade-in { animation: fadeIn 0.8s ease-out forwards; }

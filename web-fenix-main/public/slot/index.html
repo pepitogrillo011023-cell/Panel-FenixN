@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Slot Premium - Casino Fénix</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0b0f19; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
+        
+        /* Panel de Créditos */
+        .saldo-container { display: flex; align-items: center; justify-content: center; background: #064e3b; padding: 10px 30px; border-radius: 10px; border: 2px solid #10b981; margin-bottom: 15px; font-size: 20px; font-weight: bold; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); text-transform: uppercase;}
+        .saldo-container span { margin-left: 10px; color: #6ee7b7; font-size: 28px; }
+
+        /* Controles de Apuesta */
+        .controles-apuesta { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: #1f2937; padding: 10px 20px; border-radius: 10px; border: 2px solid #374151; }
+        .controles-apuesta label { font-size: 18px; color: #ffaa00; font-weight: bold; }
+        .controles-apuesta input { background: #000; color: #a3e635; border: 1px solid #555; padding: 10px; border-radius: 5px; font-size: 18px; width: 120px; text-align: center; font-weight: bold; outline: none; }
+
+       /* TABLA DE PREMIOS */
+        .pay-table { background: #1f2937; border: 2px solid #ffaa00; border-radius: 10px; padding: 15px; margin-bottom: 20px; width: 100%; max-width: 350px; text-align: left; }
+        .pay-table h3 { text-align: center; color: #ffaa00; margin-bottom: 10px; text-transform: uppercase; font-size: 18px; }
+        .prize-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #374151; font-size: 16px; }
+        .prize-row:last-child { border-bottom: none; }
+        .highlight { color: #a3e635; font-weight: bold; }
+
+        .slot-machine { display: flex; justify-content: center; gap: 10px; background: #000; padding: 20px; border: 4px solid #ffaa00; border-radius: 15px; margin-bottom: 20px; }
+        /* Rodillo individual con sombra 3D */
+        .reel { width: 100px; height: 150px; overflow: hidden; border: 2px solid #555; background: #000; position: relative; }
+        .reel::after {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0px 35px 20px -15px rgba(0,0,0,0.95), inset 0px -35px 20px -15px rgba(0,0,0,0.95);
+            pointer-events: none; z-index: 10;
+        }
+
+        .strip { list-style: none; padding: 0; margin: 0; width: 100px; transition: margin-top 0.3s ease-out; }
+        .strip li { width: 100px; height: 150px; background-size: 100px 900px !important; background-repeat: no-repeat !important; }
+
+        .spin-button { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px 40px; border: none; border-radius: 50px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: transform 0.1s; }
+        .spin-button:active { transform: scale(0.95); }
+        .spin-button:disabled { background: #4b5563; cursor: not-allowed; transform: none; }
+        .btn-volver { background: #374151; padding: 15px 30px; border: none; border-radius: 8px; color: white; cursor: pointer; margin-top: 10px; }
+        #mensaje-premio { font-size: 24px; color: #a3e635; margin-bottom: 15px; height: 35px; font-weight: bold; text-align: center; }
+
+        /* MODALES */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: linear-gradient(180deg, #1f2937, #000); border: 4px solid #f59e0b; padding: 40px; border-radius: 20px; text-align: center; max-width: 90%; width: 450px; box-shadow: 0 0 40px rgba(245, 158, 11, 0.6); }
+        .modal-title { color: #f59e0b; font-size: 32px; margin-bottom: 15px; text-transform: uppercase; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .modal-texto { font-size: 22px; color: #fff; margin-bottom: 30px; line-height: 1.4; }
+        .modal-monto { font-size: 40px; color: #a3e635; font-weight: bold; display: block; margin-top: 10px; }
+        .btn-aceptar { background: #f59e0b; color: #000; padding: 15px 40px; border: none; border-radius: 10px; font-size: 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1 style="color:#ffaa00; margin-bottom: 10px;">FÉNIX SLOTS</h1>
+    
+    <div class="saldo-container">
+        CRÉDITOS: <span id="saldo-actual">Cargando...</span>
+    </div>
+
+    <div class="controles-apuesta">
+        <label for="apuesta-input">Apuesta:</label>
+        <input type="number" id="apuesta-input" value="100" min="10" step="10" oninput="actualizarTablaPremios()">
+    </div>
+
+    <div class="pay-table">
+        <h3>Tabla de Premios</h3>
+        <div id="contenedor-premios">
+            </div>
+    </div>
+
+    <div id="mensaje-premio">¡Gira para ganar!</div>
+    
+    <div id="slot-machine-container" class="slot-machine"></div>
+
+    <button id="play-button" class="spin-button" disabled>CARGANDO...</button>
+    <button class="btn-volver" onclick="window.location.href='/'">↩️ Volver al Casino</button>
+
+    <div id="modal-inicio-bonus" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="modal-title">¡BONUS ACTIVADO!</h2>
+            <p class="modal-texto">¡Conseguiste 3 símbolos Bonus!<br>Disfrutá de <strong>10 tiros gratis</strong> con premios acumulables.</p>
+            <button class="btn-aceptar" onclick="empezarTirosGratis()">Empezar</button>
+        </div>
+    </div>
+
+    <div id="modal-fin-bonus" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="modal-title">¡Fin del Bonus!</h2>
+            <p class="modal-texto">Ganaste en tus tiradas gratis:<br> <span id="monto-bonus-final" class="modal-monto">0</span></p>
+            <button class="btn-aceptar" onclick="cerrarModalFinBonus()">Aceptar</button>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="slot-machine.js"></script>
+    <script>
+        const usuarioActual = localStorage.getItem('casino_fenix_user') || 'invitado';
+    
+    const simbolosRodillo1 = [ { name: 'laud', position: 0, weight: 1 }, { name: 'bufon', position: 150, weight: 1 }, { name: 'zapatos', position: 300, weight: 1 }, { name: 'bonus', position: 450, weight: 1 }, { name: 'clavas', position: 600, weight: 1 }, { name: 'esfera', position: 750, weight: 1 } ];
+    const simbolosRodillo2 = [ { name: 'bonus', position: 0, weight: 1 }, { name: 'laud', position: 150, weight: 1 }, { name: 'esfera', position: 300, weight: 1 }, { name: 'bufon', position: 450, weight: 1 }, { name: 'zapatos', position: 600, weight: 1 }, { name: 'clavas', position: 750, weight: 1 } ];
+    const simbolosRodillo3 = [ { name: 'zapatos', position: 0, weight: 1 }, { name: 'esfera', position: 150, weight: 1 }, { name: 'clavas', position: 300, weight: 1 }, { name: 'laud', position: 450, weight: 1 }, { name: 'bonus', position: 600, weight: 1 }, { name: 'bufon', position: 750, weight: 1 } ];
+
+    const tablaPremios = { 'bufon': 10, 'laud': 8, 'clavas': 6, 'zapatos': 3, 'esfera': 1 };
+    const nombresVisuales = { 'bufon': 'Bufón', 'laud': 'Laúd', 'clavas': 'Clavas', 'zapatos': 'Zapatos', 'esfera': 'Esfera' };
+
+    let creditosActuales = 0; 
+    let girosGratisRestantes = 0;
+    let totalGanadoEnGratis = 0;
+    let isSpinning = false;
+    let enModoBonus = false; 
+    let slot;
+
+    window.actualizarTablaPremios = function() {
+        const contenedor = document.getElementById('contenedor-premios');
+        const input = document.getElementById('apuesta-input');
+        let apuesta = parseFloat(input.value) || 0;
+        
+        let html = '';
+        for (const [simbolo, mult] of Object.entries(tablaPremios)) {
+            let nombre = nombresVisuales[simbolo];
+            let premioCalculado = apuesta * mult;
+            html += `<div class="prize-row"><span>3x ${nombre}</span><span class="highlight">${premioCalculado} CR</span></div>`;
+        }
+        html += `<div class="prize-row" style="color: #f59e0b; border-top: 2px solid #f59e0b; padding-top: 8px; margin-top: 5px;"><span>3x BONUS</span><span class="highlight">10 Tiros Gratis</span></div>`;
+        contenedor.innerHTML = html;
+    };
+
+    window.onload = async function() {
+        const btnGirar = document.getElementById('play-button');
+        const container = document.getElementById('slot-machine-container');
+        const inputApuesta = document.getElementById('apuesta-input');
+        const mensajePremio = document.getElementById('mensaje-premio');
+        const saldoDisplay = document.getElementById('saldo-actual');
+
+        window.actualizarTablaPremios();
+
+        async function cargarCreditos() {
+            try {
+                const res = await fetch(`/api/obtener-saldo?usuario=${usuarioActual}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    creditosActuales = data.saldo; 
+                } else { throw new Error("API no lista"); }
+            } catch (error) {
+                creditosActuales = 5000;
+            }
+            actualizarPantallaCreditos();
+            btnGirar.innerText = "GIRAR AHORA";
+            btnGirar.disabled = false;
+        }
+
+        function actualizarPantallaCreditos() {
+            saldoDisplay.innerText = creditosActuales;
+        }
+
+        await cargarCreditos();
+
+        slot = slotMachine(container, [
+            { imageSrc: '/slot/images/reel-strip1.png', symbols: simbolosRodillo1 },
+            { imageSrc: '/slot/images/reel-strip2.png', symbols: simbolosRodillo2 },
+            { imageSrc: '/slot/images/reel-strip3.png', symbols: simbolosRodillo3 }
+        ], (resultadoFinal) => {
+            evaluarPremio(resultadoFinal); 
+        }, { reelHeight: 150, reelWidth: 100 });
+
+        window.ejecutarGiro = async function() {
+            if (isSpinning) return;
+            let apuestaActual = parseFloat(inputApuesta.value);
+            if (apuestaActual <= 0 || isNaN(apuestaActual)) { alert("Ingresa un monto válido."); return; }
+            if (!enModoBonus && creditosActuales < apuestaActual) { alert("Créditos insuficientes."); return; }
+
+            isSpinning = true;
+            btnGirar.disabled = true;
+            inputApuesta.disabled = true; 
+            mensajePremio.innerText = "GIRANDO...";
+            slot.startSpinAnimation();
+
+            try {
+                const respuesta = await fetch('/api/jugar-slot', { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        usuario: usuarioActual,
+                        apuestaGasto: enModoBonus ? 0 : apuestaActual, 
+                        apuestaCalculoPremio: apuestaActual, 
+                        esGiroGratis: enModoBonus
+                    })
+                });
+                
+                if (!respuesta.ok) throw new Error("Error en servidor");
+                const data = await respuesta.json();
+                
+                if (data.exito) {
+                    creditosActuales = data.nuevoSaldo;
+                    actualizarPantallaCreditos();
+                    slot.stopSpinAndShowResult(data.rodillos);
+                } else {
+                    alert(data.mensaje);
+                    isSpinning = false;
+                    btnGirar.disabled = false;
+                    inputApuesta.disabled = false;
+                }
+            } catch (error) {
+                setTimeout(() => {
+                    if(!enModoBonus) creditosActuales -= apuestaActual; 
+                    actualizarPantallaCreditos();
+                    const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
+                    let r = [todosLosSimbolos[Math.floor(Math.random()*6)], todosLosSimbolos[Math.floor(Math.random()*6)], todosLosSimbolos[Math.floor(Math.random()*6)]];
+                    slot.stopSpinAndShowResult(r);
+                }, 1000); 
+            }
+        };
+
+        function evaluarPremio(rodillos) {
+            let apuestaActual = parseFloat(inputApuesta.value);
+            const esIgual = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
+            const simbolo = rodillos[0];
+            isSpinning = false; 
+
+            if (esIgual && simbolo === 'bonus') {
+                if (!enModoBonus) {
+                    enModoBonus = true; girosGratisRestantes = 10; totalGanadoEnGratis = 0;
+                    document.getElementById('modal-inicio-bonus').style.display = 'flex'; return;
+                } else { girosGratisRestantes += 10; mensajePremio.innerText = "¡+10 GIROS EXTRAS!"; }
+            } else if (esIgual && tablaPremios[simbolo]) {
+                const premio = apuestaActual * tablaPremios[simbolo];
+                if (enModoBonus) {
+                    totalGanadoEnGratis += premio;
+                    mensajePremio.innerText = `Ganaste ${premio} (Total: ${totalGanadoEnGratis})`;
+                } else {
+                    creditosActuales += premio;
+                    actualizarPantallaCreditos();
+                    mensajePremio.innerText = `¡Ganaste ${premio}!`;
+                }
+            } else { mensajePremio.innerText = enModoBonus ? "Sigue girando..." : "¡Suerte!"; }
+
+            if (enModoBonus && girosGratisRestantes > 0) {
+                girosGratisRestantes--;
+                setTimeout(window.ejecutarGiro, 1500); 
+            } else if (enModoBonus && girosGratisRestantes === 0) {
+                document.getElementById('monto-bonus-final').innerText = totalGanadoEnGratis;
+                document.getElementById('modal-fin-bonus').style.display = 'flex';
+            } else {
+                btnGirar.disabled = false; inputApuesta.disabled = false;
+            }
+        }
+
+        btnGirar.addEventListener('click', window.ejecutarGiro);
+    };
+
+    function empezarTirosGratis() {
+        document.getElementById('modal-inicio-bonus').style.display = 'none';
+        window.ejecutarGiro();
+    }
+
+    async function cerrarModalFinBonus() {
+        document.getElementById('modal-fin-bonus').style.display = 'none';
+        if (totalGanadoEnGratis > 0) {
+            try {
+                const res = await fetch('/api/sumar-premio-bonus', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: usuarioActual, premio: totalGanadoEnGratis })
+                });
+                const data = await res.json();
+                creditosActuales = data.nuevoSaldo;
+            } catch(e) { creditosActuales += totalGanadoEnGratis; }
+            document.getElementById('saldo-actual').innerText = creditosActuales;
+        }
+        enModoBonus = false; isSpinning = false;
+        document.getElementById('play-button').disabled = false;
+        document.getElementById('apuesta-input').disabled = false;
+        document.getElementById('mensaje-premio').innerText = "¡Gira para ganar!";
+    }
+    </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casino Fénix - Registro</title>
+    <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="auth-body">
+            <h3>Crear cuenta nueva</h3>
+            <input type="text" id="reg-user" class="input-dark" placeholder="Elegí tu usuario...">
+            <input type="password" id="reg-pass" class="input-dark" placeholder="Elegí tu contraseña...">
+            <button class="btn-primary" onclick="registrarUsuario()">Registrarse</button>
+            <p style="margin-top: 15px; font-size: 12px;">¿Ya tenés cuenta? <a href="index.html" style="color:#6366f1;">Ingresá acá</a></p>
+        </div>
+    </div>
+
+    <script>
+        // 1. Al cargar, guardamos el código de referido si viene en la URL
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const ref = urlParams.get('ref');
+            if (ref) {
+                localStorage.setItem('codigoReferido', ref);
+                console.log("Referido guardado:", ref);
+            }
+        });
+
+        // 2. Función de registro
+        async function registrarUsuario() {
+            const usuario = document.getElementById('reg-user').value;
+            const password = document.getElementById('reg-pass').value;
+            const codigoReferido = localStorage.getItem('codigoReferido');
+
+            const response = await fetch('/api/registrar-cliente', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario, password, codigoReferido })
+            });
+
+            const data = await response.json();
+            
+            if (data.exito) {
+                localStorage.removeItem('codigoReferido');
+                alert("¡Registro exitoso! Ya podés ingresar.");
+                window.location.href = 'index.html';
+            } else {
+                alert(data.mensaje);
+            }
+        }
+    </script>
+</body>
+</html>

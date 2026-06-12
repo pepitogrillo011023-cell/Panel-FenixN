@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Inteligente de Créditos | Acceso 24/7</title>
+    
+   <link rel="stylesheet" href="/css/landing.css">
+</head>
+<body>
+
+    <div class="hero">
+        <h1>Gestión de Créditos al Instante</h1>
+        <p>Tu plataforma preferida, ahora con autogestión 100% automatizada. Retiros rápidos y soporte profesional.</p>
+        <a href="/registro" class="cta-button" id="btn-registro">Comenzar Ahora</a>
+    </div>
+
+    <div class="features">
+        <div class="card"><h3>⚡ Velocidad</h3><p>Procesamiento automático de tus solicitudes.</p></div>
+        <div class="card"><h3>🔒 Seguridad</h3><p>Tecnología encriptada para tu tranquilidad.</p></div>
+        <div class="card"><h3>📱 24/7</h3><p>Disponible desde cualquier dispositivo.</p></div>
+    </div>
+
+    <script>
+       // Actualizamos el script para que funcione en cualquier botón de registro
+        const botones = document.querySelectorAll('.cta-button, .cta-floating');
+        
+        botones.forEach(boton => {
+            boton.addEventListener('click', function() {
+                if (typeof fbq !== 'undefined') {
+                    fbq('track', 'CompleteRegistration');
+                }
+            });
+        });
+    </script>
+    <section class="fade-in">
+    <h2>¿Cómo empezar?</h2>
+    <div class="pasos-container">
+        <div class="paso">
+            <div class="paso-num">1</div>
+            <p><strong>Regístrate</strong> en segundos desde tu celular.</p>
+        </div>
+        <div class="paso">
+            <div class="paso-num">2</div>
+            <p><strong>Carga</strong> crédito mediante transferencia segura.</p>
+        </div>
+        <div class="paso">
+            <div class="paso-num">3</div>
+            <p><strong>Gestiona</strong> tus retiros automáticos al instante.</p>
+        </div>
+    </div>
+</section>
+
+<section class="fade-in" style="margin-top: 50px;">
+    <h2>¿Por qué elegirnos?</h2>
+    <div class="features">
+        <div class="card"><h3>🚀 Velocidad</h3><p>Procesamos tus solicitudes sin demoras innecesarias.</p></div>
+        <div class="card"><h3>🛡️ Soporte</h3><p>Atención personalizada para resolver tus dudas.</p></div>
+        <div class="card"><h3>📈 Transparencia</h3><p>Historial completo de tus operaciones siempre disponible.</p></div>
+    </div>
+</section>
+    <footer style="margin-top: 40px; font-size: 0.8rem; color: #666;">
+    <a href="/privacidad" style="color: #666;">Política de Privacidad</a>
+</footer>
+    <a href="/registro" class="cta-floating">Comenzar Ahora</a>
+</body>
+</html>
